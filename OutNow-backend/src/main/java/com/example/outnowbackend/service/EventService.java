@@ -1,15 +1,20 @@
 package com.example.outnowbackend.service;
 
-import com.example.outnowbackend.entity.Event;
+import com.example.outnowbackend.ModelMapper.EventMapper;
+import com.example.outnowbackend.domain.Event;
+import com.example.outnowbackend.domain.dto.EventDTO;
 import com.example.outnowbackend.repository.EventRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.Banner;
 import org.springframework.stereotype.Service;
+import org.modelmapper.ModelMapper;
 
-import javax.swing.text.html.Option;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -17,41 +22,42 @@ import java.util.Optional;
 public class EventService {
 
     private final EventRepo eventRepo;
+    private final EventMapper eventMapper;
 
-    public List<Event> getAllEvents(){
-        return eventRepo.findAll();
+    public List<EventDTO> getAllEvents(){
+        List<Event> events = eventRepo.findAll();
+        return events.stream().map(eventMapper::toDto).collect(Collectors.toList());
     }
 
-    public Event getEventById(Integer id){
+    public EventDTO getEventById(Integer id){
         Optional<Event> optionalEvent = eventRepo.findById(id);
-        if(optionalEvent.isPresent()){
-            return optionalEvent.get();
+        return optionalEvent.map(eventMapper::toDto).orElse(null);
+
+    }
+
+    public EventDTO saveEvent(EventDTO eventDTO) {
+        Event event = eventMapper.toEntity(eventDTO);
+        event.setCreated_at(LocalDateTime.now());
+        event.setUpdated_at(LocalDateTime.now());
+        Event savedEvent = eventRepo.save(event);
+        log.info("Event with id: {} saved successfully", savedEvent.getEvent_id());
+        return eventMapper.toDto(savedEvent);
+    }
+
+
+    public EventDTO updateEvent(EventDTO eventDTO) {
+        Optional<Event> existingEvent = eventRepo.findById(eventDTO.getEvent_id());
+        if (existingEvent.isPresent()) {
+            Event event = existingEvent.get();
+            event.setUpdated_at(LocalDateTime.now());
+            // Copy other modifiable fields from eventDTO to event here
+            Event updatedEvent = eventRepo.save(event);
+            log.info("Event with id: {} updated successfully", updatedEvent.getEvent_id());
+            return eventMapper.toDto(updatedEvent);
         }
-        log.info("Event with id: {} doesn't exist", id);
         return null;
     }
 
-    public Event saveEvent (Event event){
-//        event.setCreatedAt(LocalDateTime.now());
-//        event.setUpdatedAt(LocalDateTime.now());
-//        Event savedEvent = eventRepo.save(event);
-//
-//        log.info("Event with id: {} saved successfully", event.getEvent_id());
-//        return savedEvent;
-        return null;
-    }
-
-    public Event updateEvent (Event event) {
-//        Optional<Event> existingEvent = eventRepo.findById(event.getEvent_id());
-//        event.setCreatedAt(existingEvent.get().getCreatedAt());
-//        event.setUpdatedAt(LocalDateTime.now());
-//
-//        Event updatedEvent = eventRepo.save(event);
-//
-//        log.info("Event with id: {} updated successfully", event.getEvent_id());
-//        return updatedEvent;
-        return null;
-    }
 
     public void deleteEventById (Integer id){
         eventRepo.deleteById(id);

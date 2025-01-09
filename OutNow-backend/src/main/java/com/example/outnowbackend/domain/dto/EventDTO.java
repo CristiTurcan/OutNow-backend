@@ -1,4 +1,4 @@
-package com.example.outnowbackend.entity;
+package com.example.outnowbackend.domain.dto;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -6,14 +6,13 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.modelmapper.ModelMapper;
+
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@Entity
-@Table(name = "event")
-public class Event {
-
+public class EventDTO {
     @Id
     private Integer event_id;
     private String title;
@@ -22,3 +21,4 @@ public class Event {
     private Double price;
     private String attendees;
 }
+

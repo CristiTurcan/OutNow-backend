@@ -1,11 +1,15 @@
 package com.example.outnowbackend.controller;
 
-import com.example.outnowbackend.entity.Event;
+import com.example.outnowbackend.domain.Event;
+import com.example.outnowbackend.domain.dto.EventDTO;
 import com.example.outnowbackend.service.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -16,13 +20,14 @@ import java.util.List;
 public class EventController {
 
     private final EventService eventService;
+    private static final Logger logger = LoggerFactory.getLogger(EventController.class);
 
     /**
      * This method is called when a GET request is made
      * URL: localhost:8080/event/v1/
      */
     @GetMapping("/")
-    public ResponseEntity<List<Event>> getAllEvents(){
+    public ResponseEntity<List<EventDTO>> getAllEvents(){
         return ResponseEntity.ok().body(eventService.getAllEvents());
     }
 
@@ -31,7 +36,7 @@ public class EventController {
      * URL: localhost:8080/employee/v1/1 (or any other id)
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Event> getEventById(@PathVariable Integer id) {
+    public ResponseEntity<EventDTO> getEventById(@PathVariable Integer id) {
         return ResponseEntity.ok().body(eventService.getEventById((id)));
     }
 
@@ -40,8 +45,9 @@ public class EventController {
      * URL: localhost:8080/employee/v1/
      */
     @PostMapping("/")
-    public ResponseEntity<Event> saveEvent(@RequestBody Event event) {
-        return ResponseEntity.ok().body(eventService.saveEvent(event));
+    public ResponseEntity<EventDTO> saveEvent(@RequestBody EventDTO eventDto) {
+        logger.debug("Received event: {}", eventDto);
+        return ResponseEntity.ok().body(eventService.saveEvent(eventDto));
     }
 
     /**
@@ -49,8 +55,8 @@ public class EventController {
      * URL: localhost:8080/employee/v1/
      */
     @PutMapping("/")
-    public ResponseEntity<Event> updateEvent(@RequestBody Event event) {
-        return ResponseEntity.ok().body(eventService.updateEvent(event));
+    public ResponseEntity<EventDTO> updateEvent(@RequestBody EventDTO eventDto) {
+        return ResponseEntity.ok().body(eventService.updateEvent(eventDto));
     }
 
     /**
