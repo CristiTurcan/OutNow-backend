@@ -1,4 +1,4 @@
-package com.example.outnowbackend.domain.dto;
+package com.example.outnowbackend.event.domain.dto;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

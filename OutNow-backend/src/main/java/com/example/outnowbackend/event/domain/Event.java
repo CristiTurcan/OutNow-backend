@@ -1,8 +1,6 @@
-package com.example.outnowbackend.domain;
+package com.example.outnowbackend.event.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +17,7 @@ public class Event {
     @Id
     private Integer event_id;
     private String title;
+    @Column(columnDefinition = "text")
     private String image_url;
     private String location;
     private Double price;

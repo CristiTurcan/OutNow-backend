@@ -1,7 +1,7 @@
-package com.example.outnowbackend.ModelMapper;
+package com.example.outnowbackend.event.ModelMapper;
 
-import com.example.outnowbackend.domain.Event;
-import com.example.outnowbackend.domain.dto.EventDTO;
+import com.example.outnowbackend.event.domain.Event;
+import com.example.outnowbackend.event.domain.dto.EventDTO;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

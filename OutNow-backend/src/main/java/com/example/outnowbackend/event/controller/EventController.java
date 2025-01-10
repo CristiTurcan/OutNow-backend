@@ -1,8 +1,7 @@
-package com.example.outnowbackend.controller;
+package com.example.outnowbackend.event.controller;
 
-import com.example.outnowbackend.domain.Event;
-import com.example.outnowbackend.domain.dto.EventDTO;
-import com.example.outnowbackend.service.EventService;
+import com.example.outnowbackend.event.domain.dto.EventDTO;
+import com.example.outnowbackend.event.service.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;

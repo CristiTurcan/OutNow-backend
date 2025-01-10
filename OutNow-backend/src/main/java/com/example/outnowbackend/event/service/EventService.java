@@ -1,15 +1,12 @@
-package com.example.outnowbackend.service;
+package com.example.outnowbackend.event.service;
 
-import com.example.outnowbackend.ModelMapper.EventMapper;
-import com.example.outnowbackend.domain.Event;
-import com.example.outnowbackend.domain.dto.EventDTO;
-import com.example.outnowbackend.repository.EventRepo;
+import com.example.outnowbackend.event.ModelMapper.EventMapper;
+import com.example.outnowbackend.event.domain.Event;
+import com.example.outnowbackend.event.domain.dto.EventDTO;
+import com.example.outnowbackend.event.repository.EventRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.Banner;
 import org.springframework.stereotype.Service;
-import org.modelmapper.ModelMapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
