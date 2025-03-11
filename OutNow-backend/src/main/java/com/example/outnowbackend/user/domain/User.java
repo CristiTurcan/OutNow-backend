@@ -1,12 +1,14 @@
 package com.example.outnowbackend.user.domain;
 
 import com.example.outnowbackend.event.domain.Event;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.Set;
 
 @NoArgsConstructor
@@ -22,6 +24,27 @@ public class User {
 
     @Column(nullable = false, unique = true)
     private String email;
+
+    @Column(nullable = false, unique = true)
+    private String username;
+
+    @Column(name = "user_photo", columnDefinition = "text")
+    private String userPhoto;
+
+    @Column(length = 150)
+    private String bio;
+
+    private String gender;
+
+    @Column(name = "date_of_birth")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate dateOfBirth;
+
+    private String location;
+
+    @Column(name = "interest_list")
+    private String interestList;
+
 
     // Relationship to store favorited events
     @ManyToMany

@@ -117,4 +117,43 @@ public class UserService {
         }
     }
 
+    @Transactional
+    public User updateUserProfile(User user) {
+        // Assume the user is already created and identified by email
+
+        User existingUser = userRepo.findByEmail(user.getEmail());
+
+
+        if (existingUser == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        // Update profile details only; you might choose to ignore fields that are null
+        if (user.getUsername() != null) {
+            existingUser.setUsername(user.getUsername());
+        }
+        if (user.getUserPhoto() != null) {
+            existingUser.setUserPhoto(user.getUserPhoto());
+        }
+        if (user.getBio() != null) {
+            existingUser.setBio(user.getBio());
+        }
+        if (user.getGender() != null) {
+            existingUser.setGender(user.getGender());
+        }
+
+        if (user.getDateOfBirth() != null) {
+            existingUser.setDateOfBirth(user.getDateOfBirth());
+        }
+
+        if (user.getLocation() != null) {
+            existingUser.setLocation(user.getLocation());
+        }
+        if (user.getInterestList() != null) {
+            existingUser.setInterestList(user.getInterestList());
+        }
+        return userRepo.save(existingUser);
+    }
+
+
 }

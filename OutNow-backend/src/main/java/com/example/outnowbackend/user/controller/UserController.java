@@ -3,6 +3,8 @@ package com.example.outnowbackend.user.controller;
 import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.service.UserService;
 import com.example.outnowbackend.event.domain.Event;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class UserController {
 
+    private final ObjectMapper objectMapper;
     private final UserService userService;
 
     @GetMapping("/id-by-email")
@@ -31,6 +34,17 @@ public class UserController {
     public ResponseEntity<User> upsertUser(@RequestBody User user) {
         User updatedOrNewUser = userService.upsertUser(user);
         return ResponseEntity.ok(updatedOrNewUser);
+    }
+
+    @PutMapping("/update-profile")
+    public ResponseEntity<?> updateUserProfile(@RequestBody String requestBody) throws JsonProcessingException {
+        try {
+            User user = objectMapper.readValue(requestBody, User.class);
+            return ResponseEntity.ok(userService.updateUserProfile(user));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Invalid JSON: " + e.getMessage());
+        }
     }
 
     @PostMapping("/")
