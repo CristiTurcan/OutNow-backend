@@ -30,6 +30,15 @@ public class UserController {
         }
     }
 
+    @GetMapping("/by-email")
+    public ResponseEntity<User> getUserByEmail(@RequestParam String email) {
+        User user = userService.getUserByEmail(email);
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     @PostMapping("/upsert")
     public ResponseEntity<User> upsertUser(@RequestBody User user) {
         User updatedOrNewUser = userService.upsertUser(user);

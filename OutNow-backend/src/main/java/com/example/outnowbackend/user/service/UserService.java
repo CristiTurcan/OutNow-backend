@@ -40,6 +40,12 @@ public class UserService {
         return null;
     }
 
+    @Transactional(readOnly = true)
+    public User getUserByEmail(String email) {
+        return userRepo.findByEmail(email);
+    }
+
+
     @Transactional
     public void addFavoriteEvent(Integer userId, Integer eventId) {
         User user = userRepo.findById(userId)
