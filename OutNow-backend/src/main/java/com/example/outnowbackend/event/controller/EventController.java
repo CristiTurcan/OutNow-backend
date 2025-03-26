@@ -1,70 +1,66 @@
 package com.example.outnowbackend.event.controller;
 
-import com.example.outnowbackend.event.domain.dto.EventDTO;
+import com.example.outnowbackend.event.domain.Event;
 import com.example.outnowbackend.event.service.EventService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/event/v1")
+@RequestMapping("/api/events")
 @RequiredArgsConstructor
-@Validated
+@CrossOrigin(origins = "*")
 public class EventController {
 
     private final EventService eventService;
-    private static final Logger logger = LoggerFactory.getLogger(EventController.class);
 
-    /**
-     * This method is called when a GET request is made
-     * URL: localhost:8080/event/v1/
-     */
-    @GetMapping("/")
-    public ResponseEntity<List<EventDTO>> getAllEvents(){
-        return ResponseEntity.ok().body(eventService.getAllEvents());
+    // Create a new event
+    @PostMapping("/{businessAccountId}")
+    public ResponseEntity<Event> createEvent(@RequestBody Event event,
+                                             @PathVariable Integer businessAccountId) {
+        Event createdEvent = eventService.createEvent(event, businessAccountId);
+        return new ResponseEntity<>(createdEvent, HttpStatus.CREATED);
     }
 
-    /**
-     * This method is called when a GET request is made
-     * URL: localhost:8080/employee/v1/1 (or any other id)
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<EventDTO> getEventById(@PathVariable Integer id) {
-        return ResponseEntity.ok().body(eventService.getEventById((id)));
+    // Get all events
+    @GetMapping
+    public ResponseEntity<List<Event>> getAllEvents() {
+        return ResponseEntity.ok(eventService.getAllEvents());
     }
 
-    /**
-     * This method is called when a POST request is made
-     * URL: localhost:8080/employee/v1/
-     */
-    @PostMapping("/")
-    public ResponseEntity<EventDTO> saveEvent(@RequestBody EventDTO eventDto) {
-        logger.debug("Received event: {}", eventDto);
-        return ResponseEntity.ok().body(eventService.saveEvent(eventDto));
+    // Get event by id
+    @GetMapping("/{eventId}")
+    public ResponseEntity<Event> getEventById(@PathVariable Integer eventId) {
+        return eventService.getEventById(eventId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /**
-     * This method is called when a PUT request is made
-     * URL: localhost:8080/employee/v1/
-     */
-    @PutMapping("/")
-    public ResponseEntity<EventDTO> updateEvent(@RequestBody EventDTO eventDto) {
-        return ResponseEntity.ok().body(eventService.updateEvent(eventDto));
+    @GetMapping("/business/{businessAccountId}")
+    public ResponseEntity<List<Event>> getEventsByBusinessAccount(@PathVariable Integer businessAccountId) {
+        List<Event> events = eventService.getEventsByBusinessAccount(businessAccountId);
+        return ResponseEntity.ok(events);
     }
 
-    /**
-     * This method is called when a PUT request is made
-     * URL: localhost:8080/employee/v1/1 (or any other id)
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteEmployeeById(@PathVariable Integer id) {
-        eventService.deleteEventById(id);
-        return ResponseEntity.ok().body("Deleted event successfully");
+    // Update event by id
+    @PutMapping("/{eventId}")
+    public ResponseEntity<Event> updateEvent(@PathVariable Integer eventId,
+                                             @RequestBody Event updatedEvent) {
+        try {
+            Event event = eventService.updateEvent(eventId, updatedEvent);
+            return ResponseEntity.ok(event);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Delete event by id
+    @DeleteMapping("/{eventId}")
+    public ResponseEntity<Void> deleteEvent(@PathVariable Integer eventId) {
+        eventService.deleteEvent(eventId);
+        return ResponseEntity.noContent().build();
     }
 }

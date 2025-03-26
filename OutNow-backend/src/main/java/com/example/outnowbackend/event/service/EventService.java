@@ -1,62 +1,66 @@
 package com.example.outnowbackend.event.service;
 
-import com.example.outnowbackend.event.ModelMapper.EventMapper;
+import com.example.outnowbackend.businessaccount.domain.BusinessAccount;
+import com.example.outnowbackend.businessaccount.repository.BusinessAccountRepo;
 import com.example.outnowbackend.event.domain.Event;
-import com.example.outnowbackend.event.domain.dto.EventDTO;
 import com.example.outnowbackend.event.repository.EventRepo;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class EventService {
 
     private final EventRepo eventRepo;
-    private final EventMapper eventMapper;
+    private final BusinessAccountRepo businessAccountRepo;
 
-    public List<EventDTO> getAllEvents(){
-        List<Event> events = eventRepo.findAll();
-        return events.stream().map(eventMapper::toDto).collect(Collectors.toList());
-    }
-
-    public EventDTO getEventById(Integer id){
-        Optional<Event> optionalEvent = eventRepo.findById(id);
-        return optionalEvent.map(eventMapper::toDto).orElse(null);
-
-    }
-
-    public EventDTO saveEvent(EventDTO eventDTO) {
-        Event event = eventMapper.toEntity(eventDTO);
-        event.setCreated_at(LocalDateTime.now());
-        event.setUpdated_at(LocalDateTime.now());
-        Event savedEvent = eventRepo.save(event);
-        log.info("Event with id: {} saved successfully", savedEvent.getEvent_id());
-        return eventMapper.toDto(savedEvent);
-    }
-
-
-    public EventDTO updateEvent(EventDTO eventDTO) {
-        Optional<Event> existingEvent = eventRepo.findById(eventDTO.getEvent_id());
-        if (existingEvent.isPresent()) {
-            Event event = existingEvent.get();
-            event.setUpdated_at(LocalDateTime.now());
-            // Copy other modifiable fields from eventDTO to event here
-            Event updatedEvent = eventRepo.save(event);
-            log.info("Event with id: {} updated successfully", updatedEvent.getEvent_id());
-            return eventMapper.toDto(updatedEvent);
+    // Create a new event associated with a business account
+    @Transactional
+    public Event createEvent(Event event, Integer businessAccountId) {
+        Optional<BusinessAccount> account = businessAccountRepo.findById(businessAccountId);
+        if (account.isEmpty()) {
+            throw new RuntimeException("Business account not found");
         }
-        return null;
+        event.setBusinessAccount(account.get());
+        return eventRepo.save(event);
+    }
+
+    // Retrieve all events
+    public List<Event> getAllEvents() {
+        return eventRepo.findAll();
+    }
+
+    // Retrieve single event by id
+    public Optional<Event> getEventById(Integer eventId) {
+        return eventRepo.findById(eventId);
+    }
+
+    @Transactional
+    public List<Event> getEventsByBusinessAccount(Integer businessAccountId) {
+        return eventRepo.findByBusinessAccount_Id(businessAccountId);
     }
 
 
-    public void deleteEventById (Integer id){
-        eventRepo.deleteById(id);
+    // Update existing event details
+    @Transactional
+    public Event updateEvent(Integer eventId, Event updatedEvent) {
+        return eventRepo.findById(eventId).map(event -> {
+            event.setTitle(updatedEvent.getTitle());
+            event.setDescription(updatedEvent.getDescription());
+            event.setImageUrl(updatedEvent.getImageUrl());
+            event.setLocation(updatedEvent.getLocation());
+            event.setPrice(updatedEvent.getPrice());
+            return eventRepo.save(event);
+        }).orElseThrow(() -> new RuntimeException("Event not found"));
+    }
+
+    // Delete event by id
+    @Transactional
+    public void deleteEvent(Integer eventId) {
+        eventRepo.deleteById(eventId);
     }
 }
