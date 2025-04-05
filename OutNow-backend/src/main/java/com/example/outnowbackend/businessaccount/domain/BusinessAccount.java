@@ -37,7 +37,6 @@ public class BusinessAccount {
     private String interestList;
 
     // Relationship: each business account creates many events
-    @JsonIgnore
     @OneToMany(mappedBy = "businessAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Event> createdEvents;
 }

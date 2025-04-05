@@ -1,5 +1,6 @@
 package com.example.outnowbackend.user.controller;
 
+import com.example.outnowbackend.user.dto.UserDTO;
 import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.service.UserService;
 import com.example.outnowbackend.event.domain.Event;
@@ -8,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
-
 import java.util.Set;
 
 @RestController
@@ -23,25 +23,18 @@ public class UserController {
     @GetMapping("/id-by-email")
     public ResponseEntity<Integer> getUserIdByEmail(@RequestParam String email) {
         Integer userId = userService.getUserIdByEmail(email);
-        if (userId != null) {
-            return ResponseEntity.ok(userId);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return userId != null ? ResponseEntity.ok(userId) : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/by-email")
-    public ResponseEntity<User> getUserByEmail(@RequestParam String email) {
-        User user = userService.getUserByEmail(email);
-        if (user != null) {
-            return ResponseEntity.ok(user);
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<UserDTO> getUserByEmail(@RequestParam String email) {
+        UserDTO userDto = userService.getUserByEmail(email);
+        return userDto != null ? ResponseEntity.ok(userDto) : ResponseEntity.notFound().build();
     }
 
     @PostMapping("/upsert")
-    public ResponseEntity<User> upsertUser(@RequestBody User user) {
-        User updatedOrNewUser = userService.upsertUser(user);
+    public ResponseEntity<UserDTO> upsertUser(@RequestBody User user) {
+        UserDTO updatedOrNewUser = userService.upsertUser(user);
         return ResponseEntity.ok(updatedOrNewUser);
     }
 
@@ -57,13 +50,13 @@ public class UserController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        User createdUser = userService.createUser(user);
+    public ResponseEntity<UserDTO> createUser(@RequestBody User user) {
+        UserDTO createdUser = userService.createUser(user);
         return ResponseEntity.ok(createdUser);
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<User> getUserById(@PathVariable Integer userId) {
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Integer userId) {
         return userService.getUserById(userId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

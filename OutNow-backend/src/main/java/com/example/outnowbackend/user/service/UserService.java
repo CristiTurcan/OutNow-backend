@@ -1,18 +1,18 @@
 package com.example.outnowbackend.user.service;
 
 import com.example.outnowbackend.user.domain.User;
+import com.example.outnowbackend.user.dto.UserDTO;
 import com.example.outnowbackend.user.repository.UserRepo;
 import com.example.outnowbackend.event.domain.Event;
 import com.example.outnowbackend.event.repository.EventRepo;
-import com.sun.tools.jconsole.JConsoleContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Optional;
 import java.util.Set;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -22,29 +22,42 @@ public class UserService {
     private final EventRepo eventRepo;
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
+    // Conversion helper: entity -> DTO
+    private UserDTO convertToDTO(User user) {
+        UserDTO dto = new UserDTO();
+        dto.setUserid(user.getUserid());
+        dto.setEmail(user.getEmail());
+        dto.setUsername(user.getUsername());
+        dto.setUserPhoto(user.getUserPhoto());
+        dto.setBio(user.getBio());
+        dto.setGender(user.getGender());
+        dto.setDateOfBirth(user.getDateOfBirth().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        dto.setLocation(user.getLocation());
+        dto.setInterestList(user.getInterestList());
+        return dto;
+    }
+
     @Transactional
-    public User createUser(User user) {
-        return userRepo.save(user);
+    public UserDTO createUser(User user) {
+        User created = userRepo.save(user);
+        return convertToDTO(created);
     }
 
     @Transactional(readOnly = true)
-    public Optional<User> getUserById(Integer userId) {
-        return userRepo.findById(userId);
+    public Optional<UserDTO> getUserById(Integer userId) {
+        return userRepo.findById(userId).map(this::convertToDTO);
     }
 
     public Integer getUserIdByEmail(String email) {
         User user = userRepo.findByEmail(email);
-        if (user != null) {
-            return user.getUserid();
-        }
-        return null;
+        return user != null ? user.getUserid() : null;
     }
 
     @Transactional(readOnly = true)
-    public User getUserByEmail(String email) {
-        return userRepo.findByEmail(email);
+    public UserDTO getUserByEmail(String email) {
+        User user = userRepo.findByEmail(email);
+        return user != null ? convertToDTO(user) : null;
     }
-
 
     @Transactional
     public void addFavoriteEvent(Integer userId, Integer eventId) {
@@ -52,7 +65,6 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Event event = eventRepo.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
-
         user.getFavoritedEvents().add(event);
         userRepo.save(user);
     }
@@ -63,7 +75,6 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Event event = eventRepo.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
-
         user.getFavoritedEvents().remove(event);
         userRepo.save(user);
     }
@@ -74,7 +85,6 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Event event = eventRepo.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
-
         user.getGoingEvents().add(event);
         userRepo.save(user);
     }
@@ -85,7 +95,6 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Event event = eventRepo.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
-
         user.getGoingEvents().remove(event);
         userRepo.save(user);
     }
@@ -104,18 +113,17 @@ public class UserService {
         return user.getGoingEvents();
     }
 
-    public User upsertUser(User user) {
+    @Transactional
+    public UserDTO upsertUser(User user) {
         try {
             logger.debug("Attempting to upsert user with email: {}", user.getEmail());
             User existingUser = userRepo.findByEmail(user.getEmail());
-
             if (existingUser != null) {
                 logger.debug("User exists, updating user: {}", existingUser);
-                // Update logic here, if there are fields to update
-                return userRepo.save(existingUser);
+                return convertToDTO(userRepo.save(existingUser));
             } else {
                 logger.debug("User does not exist, creating new user");
-                return userRepo.save(user);
+                return convertToDTO(userRepo.save(user));
             }
         } catch (Exception e) {
             logger.error("Error upserting user with email {}: {}", user.getEmail(), e.getMessage(), e);
@@ -124,17 +132,11 @@ public class UserService {
     }
 
     @Transactional
-    public User updateUserProfile(User user) {
-        // Assume the user is already created and identified by email
-
+    public UserDTO updateUserProfile(User user) {
         User existingUser = userRepo.findByEmail(user.getEmail());
-
-
         if (existingUser == null) {
             throw new IllegalArgumentException("User not found");
         }
-
-        // Update profile details only; you might choose to ignore fields that are null
         if (user.getUsername() != null) {
             existingUser.setUsername(user.getUsername());
         }
@@ -147,19 +149,15 @@ public class UserService {
         if (user.getGender() != null) {
             existingUser.setGender(user.getGender());
         }
-
         if (user.getDateOfBirth() != null) {
             existingUser.setDateOfBirth(user.getDateOfBirth());
         }
-
         if (user.getLocation() != null) {
             existingUser.setLocation(user.getLocation());
         }
         if (user.getInterestList() != null) {
             existingUser.setInterestList(user.getInterestList());
         }
-        return userRepo.save(existingUser);
+        return convertToDTO(userRepo.save(existingUser));
     }
-
-
 }

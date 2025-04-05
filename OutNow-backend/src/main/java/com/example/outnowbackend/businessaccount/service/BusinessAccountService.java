@@ -1,13 +1,14 @@
 package com.example.outnowbackend.businessaccount.service;
 
 import com.example.outnowbackend.businessaccount.domain.BusinessAccount;
+import com.example.outnowbackend.businessaccount.dto.BusinessAccountDTO;
 import com.example.outnowbackend.businessaccount.repository.BusinessAccountRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class BusinessAccountService {
@@ -19,25 +20,49 @@ public class BusinessAccountService {
         this.businessAccountRepository = businessAccountRepository;
     }
 
-    public BusinessAccount createBusinessAccount(BusinessAccount businessAccount) {
-        return businessAccountRepository.save(businessAccount);
+    // Conversion helper: entity -> DTO
+    public BusinessAccountDTO convertToDTO(BusinessAccount account) {
+        BusinessAccountDTO dto = new BusinessAccountDTO();
+        dto.setId(account.getId());
+        dto.setEmail(account.getEmail());
+        dto.setUsername(account.getUsername());
+        dto.setUserPhoto(account.getUserPhoto());
+        dto.setBio(account.getBio());
+        dto.setLocation(account.getLocation());
+        dto.setInterestList(account.getInterestList());
+        return dto;
     }
 
-    public Optional<BusinessAccount> getBusinessAccountById(Integer id) {
-        return businessAccountRepository.findById(id);
+    // Helper for lists
+    public List<BusinessAccountDTO> convertToDTOList(List<BusinessAccount> accounts) {
+        return accounts.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    public List<BusinessAccount> getAllBusinessAccounts() {
-        return businessAccountRepository.findAll();
+    public BusinessAccountDTO createBusinessAccount(BusinessAccount businessAccount) {
+        BusinessAccount created = businessAccountRepository.save(businessAccount);
+        return convertToDTO(created);
     }
 
-    public Optional<BusinessAccount> getBusinessAccountByEmail(String email) {
+    public Optional<BusinessAccountDTO> getBusinessAccountById(Integer id) {
+        return businessAccountRepository.findById(id).map(this::convertToDTO);
+    }
+
+    public List<BusinessAccountDTO> getAllBusinessAccounts() {
+        List<BusinessAccount> accounts = businessAccountRepository.findAll();
+        return convertToDTOList(accounts);
+    }
+
+    public Optional<BusinessAccountDTO> getBusinessAccountByEmail(String email) {
+        return businessAccountRepository.findByEmail(email).map(this::convertToDTO);
+    }
+
+    // If you need the raw entity in some cases, you can keep this helper.
+    public Optional<BusinessAccount> getBusinessAccountEntityByEmail(String email) {
         return businessAccountRepository.findByEmail(email);
     }
 
-
     @Transactional
-    public BusinessAccount updateBusinessAccount(Integer id, BusinessAccount businessAccount) {
+    public BusinessAccountDTO updateBusinessAccount(Integer id, BusinessAccount businessAccount) {
         BusinessAccount existingAccount = businessAccountRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Business account not found"));
 
@@ -59,11 +84,12 @@ public class BusinessAccountService {
         if (businessAccount.getInterestList() != null) {
             existingAccount.setInterestList(businessAccount.getInterestList());
         }
-        return businessAccountRepository.save(existingAccount);
+        BusinessAccount updated = businessAccountRepository.save(existingAccount);
+        return convertToDTO(updated);
     }
 
     @Transactional
-    public BusinessAccount updateBusinessAccountByEmail(String email, BusinessAccount businessAccountUpdates) {
+    public BusinessAccountDTO updateBusinessAccountByEmail(String email, BusinessAccount businessAccountUpdates) {
         BusinessAccount existingAccount = businessAccountRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Business account not found"));
 
@@ -82,10 +108,9 @@ public class BusinessAccountService {
         if (businessAccountUpdates.getInterestList() != null) {
             existingAccount.setInterestList(businessAccountUpdates.getInterestList());
         }
-
-        return businessAccountRepository.save(existingAccount);
+        BusinessAccount updated = businessAccountRepository.save(existingAccount);
+        return convertToDTO(updated);
     }
-
 
     public void deleteBusinessAccount(Integer id) {
         businessAccountRepository.deleteById(id);

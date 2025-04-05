@@ -1,16 +1,16 @@
 package com.example.outnowbackend.businessaccount.controller;
 
+import com.example.outnowbackend.businessaccount.dto.BusinessAccountDTO;
 import com.example.outnowbackend.businessaccount.domain.BusinessAccount;
 import com.example.outnowbackend.businessaccount.service.BusinessAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/business-accounts")
+@RequestMapping("/business-accounts")
 public class BusinessAccountController {
 
     private final BusinessAccountService businessAccountService;
@@ -21,55 +21,50 @@ public class BusinessAccountController {
     }
 
     @PostMapping
-    public ResponseEntity<BusinessAccount> createBusinessAccount(@RequestBody BusinessAccount businessAccount) {
-        BusinessAccount created = businessAccountService.createBusinessAccount(businessAccount);
+    public ResponseEntity<BusinessAccountDTO> createBusinessAccount(@RequestBody BusinessAccount businessAccount) {
+        BusinessAccountDTO created = businessAccountService.createBusinessAccount(businessAccount);
         return ResponseEntity.ok(created);
     }
 
     @GetMapping("/by-email")
-    public ResponseEntity<BusinessAccount> getBusinessAccountByEmail(@RequestParam String email) {
-        Optional<BusinessAccount> optionalAccount = businessAccountService.getBusinessAccountByEmail(email);
+    public ResponseEntity<BusinessAccountDTO> getBusinessAccountByEmail(@RequestParam String email) {
+        Optional<BusinessAccountDTO> optionalAccount = businessAccountService.getBusinessAccountByEmail(email);
         return optionalAccount.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping("/by-email")
-    public ResponseEntity<BusinessAccount> updateBusinessAccountByEmail(
+    public ResponseEntity<BusinessAccountDTO> updateBusinessAccountByEmail(
             @RequestParam String email,
             @RequestBody BusinessAccount businessAccountUpdates) {
-        BusinessAccount updated = businessAccountService.updateBusinessAccountByEmail(email, businessAccountUpdates);
+        BusinessAccountDTO updated = businessAccountService.updateBusinessAccountByEmail(email, businessAccountUpdates);
         return ResponseEntity.ok(updated);
     }
 
-
     @GetMapping("/{id}")
-    public ResponseEntity<BusinessAccount> getBusinessAccountById(@PathVariable Integer id) {
-        Optional<BusinessAccount> optionalAccount = businessAccountService.getBusinessAccountById(id);
+    public ResponseEntity<BusinessAccountDTO> getBusinessAccountById(@PathVariable Integer id) {
+        Optional<BusinessAccountDTO> optionalAccount = businessAccountService.getBusinessAccountById(id);
         return optionalAccount.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/id")
     public ResponseEntity<Integer> getBusinessAccountIdByEmail(@RequestParam String email) {
-        Optional<BusinessAccount> optionalAccount = businessAccountService.getBusinessAccountByEmail(email);
+        Optional<BusinessAccount> optionalAccount = businessAccountService.getBusinessAccountEntityByEmail(email);
         return optionalAccount.map(account -> ResponseEntity.ok(account.getId()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-
     @GetMapping
-    public ResponseEntity<List<BusinessAccount>> getAllBusinessAccounts() {
-        List<BusinessAccount> accounts = businessAccountService.getAllBusinessAccounts();
+    public ResponseEntity<List<BusinessAccountDTO>> getAllBusinessAccounts() {
+        List<BusinessAccountDTO> accounts = businessAccountService.getAllBusinessAccounts();
         return ResponseEntity.ok(accounts);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BusinessAccount> updateBusinessAccount(@PathVariable Integer id,
-                                                                 @RequestBody BusinessAccount businessAccount) {
-        BusinessAccount updated = businessAccountService.updateBusinessAccount(id, businessAccount);
-        if (updated == null) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<BusinessAccountDTO> updateBusinessAccount(@PathVariable Integer id,
+                                                                    @RequestBody BusinessAccount businessAccount) {
+        BusinessAccountDTO updated = businessAccountService.updateBusinessAccount(id, businessAccount);
         return ResponseEntity.ok(updated);
     }
 
