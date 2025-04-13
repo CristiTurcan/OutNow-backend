@@ -100,18 +100,23 @@ public class UserService {
         }
     }
 
-
-
-
     @Transactional
     public void addGoingEvent(Integer userId, Integer eventId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Event event = eventRepo.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
-        user.getGoingEvents().add(event);
-        userRepo.save(user);
+
+        // Optional: check to avoid duplicates
+        if (!user.getGoingEvents().contains(event)) {
+            user.getGoingEvents().add(event);
+            userRepo.save(user);
+            logger.info("Event (ID: {}) added to going events for user (ID: {}).", eventId, userId);
+        } else {
+            logger.warn("Event (ID: {}) is already in going events for user (ID: {}).", eventId, userId);
+        }
     }
+
 
     @Transactional
     public void removeGoingEvent(Integer userId, Integer eventId) {
@@ -119,9 +124,16 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Event event = eventRepo.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
-        user.getGoingEvents().remove(event);
-        userRepo.save(user);
+
+        boolean removed = user.getGoingEvents().remove(event);
+        if (removed) {
+            userRepo.save(user);
+            logger.info("Event (ID: {}) removed from going events for user (ID: {}).", eventId, userId);
+        } else {
+            logger.warn("Event (ID: {}) was not present in going events for user (ID: {}).", eventId, userId);
+        }
     }
+
 
     @Transactional(readOnly = true)
     public Set<EventDTO> getUserFavorites(Integer userId) {
@@ -137,14 +149,19 @@ public class UserService {
 
 
 
-
     @Transactional(readOnly = true)
-    public Set<Event> getUserGoingEvents(Integer userId) {
+    public Set<EventDTO> getUserGoingEvents(Integer userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        // Return a defensive copy
-        return new HashSet<>(user.getGoingEvents());
+        // Force initialization if needed
+        user.getGoingEvents().size();
+
+        // Convert each Event to an EventDTO
+        return user.getGoingEvents().stream()
+                .map(eventMapper::toDTO)
+                .collect(Collectors.toSet());
     }
+
 
 
     @Transactional

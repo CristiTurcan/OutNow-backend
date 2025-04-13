@@ -110,8 +110,9 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/going")
-    public ResponseEntity<Set<Event>> getUserGoingEvents(@PathVariable Integer userId) {
-        Set<Event> going = userService.getUserGoingEvents(userId);
+    public ResponseEntity<Set<EventDTO>> getUserGoingEvents(@PathVariable Integer userId) {
+        Set<EventDTO> going = userService.getUserGoingEvents(userId);
         return ResponseEntity.ok(going);
     }
+
 }
