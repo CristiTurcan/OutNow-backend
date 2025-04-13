@@ -14,4 +14,7 @@ public class EventDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer businessAccountId;
+    private String eventDate;
+    private String eventTime;
+    private String interestList;
 }

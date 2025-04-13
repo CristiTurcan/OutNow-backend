@@ -1,5 +1,6 @@
 package com.example.outnowbackend.user.controller;
 
+import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.user.dto.UserDTO;
 import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.service.UserService;
@@ -103,8 +104,8 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/favorites")
-    public ResponseEntity<Set<Event>> getUserFavorites(@PathVariable Integer userId) {
-        Set<Event> favorites = userService.getUserFavorites(userId);
+    public ResponseEntity<Set<EventDTO>> getUserFavorites(@PathVariable Integer userId) {
+        Set<EventDTO> favorites = userService.getUserFavorites(userId);
         return ResponseEntity.ok(favorites);
     }
 

@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -19,6 +20,7 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // Automatically generate IDs
+    @EqualsAndHashCode.Include
     private Integer userid;
 
     @Column(nullable = false, unique = true)

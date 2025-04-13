@@ -3,11 +3,16 @@ package com.example.outnowbackend.event.service;
 import com.example.outnowbackend.businessaccount.domain.BusinessAccount;
 import com.example.outnowbackend.businessaccount.repository.BusinessAccountRepo;
 import com.example.outnowbackend.event.domain.Event;
+import com.example.outnowbackend.event.mapper.EventMapper;
 import com.example.outnowbackend.event.repository.EventRepo;
 import com.example.outnowbackend.event.dto.EventDTO;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,21 +23,29 @@ public class EventService {
 
     private final EventRepo eventRepo;
     private final BusinessAccountRepo businessAccountRepo;
+    private final EventMapper eventMapper;
 
-    // Helper to convert an Event entity to a DTO
-    private EventDTO convertToDTO(Event event) {
-        EventDTO dto = new EventDTO();
-        dto.setEventId(event.getEventId());
-        dto.setTitle(event.getTitle());
-        dto.setDescription(event.getDescription());
-        dto.setImageUrl(event.getImageUrl());
-        dto.setLocation(event.getLocation());
-        dto.setPrice(event.getPrice());
-        dto.setCreatedAt(event.getCreatedAt());
-        dto.setUpdatedAt(event.getUpdatedAt());
-        dto.setBusinessAccountId(event.getBusinessAccount() != null ? event.getBusinessAccount().getId() : null);
-        return dto;
-    }
+//    // Helper to convert an Event entity to a DTO
+//    private EventDTO convertToDTO(Event event) {
+//        EventDTO dto = new EventDTO();
+//        dto.setEventId(event.getEventId());
+//        dto.setTitle(event.getTitle());
+//        dto.setDescription(event.getDescription());
+//        dto.setImageUrl(event.getImageUrl());
+//        dto.setLocation(event.getLocation());
+//        dto.setPrice(event.getPrice());
+//        dto.setCreatedAt(event.getCreatedAt());
+//        dto.setUpdatedAt(event.getUpdatedAt());
+//        dto.setBusinessAccountId(event.getBusinessAccount() != null ? event.getBusinessAccount().getId() : null);
+//        dto.setEventDate(event.getEventDate() != null
+//                ? event.getEventDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+//                : null);
+//        dto.setEventTime(event.getEventTime() != null
+//                ? event.getEventTime().format(DateTimeFormatter.ofPattern("HH:mm"))
+//                : null);
+//        dto.setInterestList(event.getInterestList());
+//        return dto;
+//    }
 
     // Create a new event associated with a business account
     @Transactional
@@ -43,39 +56,50 @@ public class EventService {
         }
         event.setBusinessAccount(account.get());
         Event createdEvent = eventRepo.save(event);
-        return convertToDTO(createdEvent);
+        return eventMapper.toDTO(createdEvent);
     }
 
     // Retrieve all events
     public List<EventDTO> getAllEvents() {
-        List<Event> events = eventRepo.findAll();
-        return events.stream().map(this::convertToDTO).collect(Collectors.toList());
+        return eventRepo.findAll().stream()
+                .map(eventMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    // Retrieve single event by id
     public Optional<EventDTO> getEventById(Integer eventId) {
-        return eventRepo.findById(eventId).map(this::convertToDTO);
+        return eventRepo.findById(eventId)
+                .map(eventMapper::toDTO);
     }
+
 
     @Transactional
     public List<EventDTO> getEventsByBusinessAccount(Integer businessAccountId) {
-        List<Event> events = eventRepo.findByBusinessAccount_Id(businessAccountId);
-        return events.stream().map(this::convertToDTO).collect(Collectors.toList());
+        return eventRepo.findByBusinessAccount_Id(businessAccountId)
+                .stream()
+                .map(eventMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     // Update existing event details
     @Transactional
     public EventDTO updateEvent(Integer eventId, Event updatedEvent) {
+
         Event event = eventRepo.findById(eventId).map(existing -> {
             existing.setTitle(updatedEvent.getTitle());
             existing.setDescription(updatedEvent.getDescription());
             existing.setImageUrl(updatedEvent.getImageUrl());
             existing.setLocation(updatedEvent.getLocation());
             existing.setPrice(updatedEvent.getPrice());
+            existing.setEventDate(updatedEvent.getEventDate());
+            existing.setEventTime(updatedEvent.getEventTime());
+            existing.setInterestList(updatedEvent.getInterestList());
+
             return eventRepo.save(existing);
         }).orElseThrow(() -> new RuntimeException("Event not found"));
-        return convertToDTO(event);
+        return eventMapper.toDTO(event);
     }
+
+
 
     // Delete event by id
     @Transactional

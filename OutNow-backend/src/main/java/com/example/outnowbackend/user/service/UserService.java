@@ -1,7 +1,10 @@
 package com.example.outnowbackend.user.service;
 
+import com.example.outnowbackend.event.dto.EventDTO;
+import com.example.outnowbackend.event.mapper.EventMapper;
 import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.dto.UserDTO;
+import com.example.outnowbackend.user.mapper.UserMapper;
 import com.example.outnowbackend.user.repository.UserRepo;
 import com.example.outnowbackend.event.domain.Event;
 import com.example.outnowbackend.event.repository.EventRepo;
@@ -10,9 +13,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.time.format.DateTimeFormatter;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,42 +28,46 @@ public class UserService {
     private final UserRepo userRepo;
     private final EventRepo eventRepo;
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+    private final EventMapper eventMapper;  // Injected mapper
+    private final UserMapper userMapper;
+
 
     // Conversion helper: entity -> DTO
-    private UserDTO convertToDTO(User user) {
-        UserDTO dto = new UserDTO();
-        dto.setUserid(user.getUserid());
-        dto.setEmail(user.getEmail());
-        dto.setUsername(user.getUsername());
-        dto.setUserPhoto(user.getUserPhoto());
-        dto.setBio(user.getBio());
-        dto.setGender(user.getGender());
-        dto.setDateOfBirth(user.getDateOfBirth().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        dto.setLocation(user.getLocation());
-        dto.setInterestList(user.getInterestList());
-        return dto;
-    }
+//    private UserDTO convertToDTO(User user) {
+//        UserDTO dto = new UserDTO();
+//        dto.setUserid(user.getUserid());
+//        dto.setEmail(user.getEmail());
+//        dto.setUsername(user.getUsername());
+//        dto.setUserPhoto(user.getUserPhoto());
+//        dto.setBio(user.getBio());
+//        dto.setGender(user.getGender());
+//        dto.setDateOfBirth(user.getDateOfBirth().format(DateTimeFormatter.ISO_LOCAL_DATE));
+//        dto.setLocation(user.getLocation());
+//        dto.setInterestList(user.getInterestList());
+//        return dto;
+//    }
 
     @Transactional
     public UserDTO createUser(User user) {
         User created = userRepo.save(user);
-        return convertToDTO(created);
+        return userMapper.toDTO(created);
     }
 
     @Transactional(readOnly = true)
     public Optional<UserDTO> getUserById(Integer userId) {
-        return userRepo.findById(userId).map(this::convertToDTO);
-    }
-
-    public Integer getUserIdByEmail(String email) {
-        User user = userRepo.findByEmail(email);
-        return user != null ? user.getUserid() : null;
+        return userRepo.findById(userId)
+                .map(userMapper::toDTO);
     }
 
     @Transactional(readOnly = true)
     public UserDTO getUserByEmail(String email) {
         User user = userRepo.findByEmail(email);
-        return user != null ? convertToDTO(user) : null;
+        return (user != null) ? userMapper.toDTO(user) : null;
+    }
+
+    public Integer getUserIdByEmail(String email) {
+        User user = userRepo.findByEmail(email);
+        return user != null ? user.getUserid() : null;
     }
 
     @Transactional
@@ -65,9 +76,12 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Event event = eventRepo.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
         user.getFavoritedEvents().add(event);
         userRepo.save(user);
     }
+
+
 
     @Transactional
     public void removeFavoriteEvent(Integer userId, Integer eventId) {
@@ -75,9 +89,19 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Event event = eventRepo.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
-        user.getFavoritedEvents().remove(event);
-        userRepo.save(user);
+
+        // Remove the event from the in-memory collection
+        boolean removed = user.getFavoritedEvents().remove(event);
+        if (removed) {
+            userRepo.save(user);
+            logger.info("Event (ID: {}) removed from favorites for user (ID: {}).", eventId, userId);
+        } else {
+            logger.warn("Event (ID: {}) was not present in favorites for user (ID: {}).", eventId, userId);
+        }
     }
+
+
+
 
     @Transactional
     public void addGoingEvent(Integer userId, Integer eventId) {
@@ -100,18 +124,28 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Set<Event> getUserFavorites(Integer userId) {
+    public Set<EventDTO> getUserFavorites(Integer userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return user.getFavoritedEvents();
+        // Force initialization if lazy-loaded
+        user.getFavoritedEvents().size();
+        // Convert the favorites to DTOs
+        return user.getFavoritedEvents().stream()
+                .map(eventMapper::toDTO)
+                .collect(Collectors.toSet());
     }
+
+
+
 
     @Transactional(readOnly = true)
     public Set<Event> getUserGoingEvents(Integer userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return user.getGoingEvents();
+        // Return a defensive copy
+        return new HashSet<>(user.getGoingEvents());
     }
+
 
     @Transactional
     public UserDTO upsertUser(User user) {
@@ -120,10 +154,10 @@ public class UserService {
             User existingUser = userRepo.findByEmail(user.getEmail());
             if (existingUser != null) {
                 logger.debug("User exists, updating user: {}", existingUser);
-                return convertToDTO(userRepo.save(existingUser));
+                return userMapper.toDTO(userRepo.save(existingUser));
             } else {
                 logger.debug("User does not exist, creating new user");
-                return convertToDTO(userRepo.save(user));
+                return userMapper.toDTO(userRepo.save(user));
             }
         } catch (Exception e) {
             logger.error("Error upserting user with email {}: {}", user.getEmail(), e.getMessage(), e);
@@ -158,6 +192,6 @@ public class UserService {
         if (user.getInterestList() != null) {
             existingUser.setInterestList(user.getInterestList());
         }
-        return convertToDTO(userRepo.save(existingUser));
+        return userMapper.toDTO(userRepo.save(existingUser));
     }
 }
