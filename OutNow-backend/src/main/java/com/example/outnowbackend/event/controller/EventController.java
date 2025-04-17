@@ -59,6 +59,21 @@ public class EventController {
         }
     }
 
+    @GetMapping("/{eventId}/attendees/count")
+    public ResponseEntity<Long> getAttendeesCount(@PathVariable Integer eventId) {
+        return ResponseEntity.ok(eventService.getAttendanceCount(eventId));
+    }
+
+    @GetMapping("/{eventId}/favorites/count")
+    public ResponseEntity<Long> getFavoritesCount(@PathVariable Integer eventId) {
+        return ResponseEntity.ok(eventService.getFavoriteCount(eventId));
+    }
+
+    @GetMapping("/{eventId}/favorites/unique-count")
+    public ResponseEntity<Long> getUniqueFavoriteCount(@PathVariable Integer eventId) {
+        return ResponseEntity.ok(eventService.getUniqueFavoriteCount(eventId));
+    }
+
     // Delete event by id
     @DeleteMapping("/{eventId}")
     public ResponseEntity<Void> deleteEvent(@PathVariable Integer eventId) {

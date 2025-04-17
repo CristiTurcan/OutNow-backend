@@ -6,13 +6,13 @@ import com.example.outnowbackend.event.domain.Event;
 import com.example.outnowbackend.event.mapper.EventMapper;
 import com.example.outnowbackend.event.repository.EventRepo;
 import com.example.outnowbackend.event.dto.EventDTO;
-import jakarta.transaction.Transactional;
+import com.example.outnowbackend.user.repository.UserRepo;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -24,28 +24,41 @@ public class EventService {
     private final EventRepo eventRepo;
     private final BusinessAccountRepo businessAccountRepo;
     private final EventMapper eventMapper;
+    private final UserRepo userRepo;
 
-//    // Helper to convert an Event entity to a DTO
-//    private EventDTO convertToDTO(Event event) {
-//        EventDTO dto = new EventDTO();
-//        dto.setEventId(event.getEventId());
-//        dto.setTitle(event.getTitle());
-//        dto.setDescription(event.getDescription());
-//        dto.setImageUrl(event.getImageUrl());
-//        dto.setLocation(event.getLocation());
-//        dto.setPrice(event.getPrice());
-//        dto.setCreatedAt(event.getCreatedAt());
-//        dto.setUpdatedAt(event.getUpdatedAt());
-//        dto.setBusinessAccountId(event.getBusinessAccount() != null ? event.getBusinessAccount().getId() : null);
-//        dto.setEventDate(event.getEventDate() != null
-//                ? event.getEventDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
-//                : null);
-//        dto.setEventTime(event.getEventTime() != null
-//                ? event.getEventTime().format(DateTimeFormatter.ofPattern("HH:mm"))
-//                : null);
-//        dto.setInterestList(event.getInterestList());
-//        return dto;
-//    }
+    @PersistenceContext
+    private EntityManager em;
+
+    @Transactional(readOnly = true)
+    public long getAttendanceCount(Integer eventId) {
+        return userRepo.countAttendeesByEventId(eventId);
+    }
+
+    @Transactional(readOnly = true)
+    public long getFavoriteCount(Integer eventId) {
+        return userRepo.countByFavoritedEvents_EventId(eventId);
+    }
+
+    @Transactional(readOnly = true)
+    public long getUniqueFavoriteCount(Integer eventId) {
+        String sql =
+                "SELECT COUNT(*) " +
+                        "  FROM user_favorited_events uf " +
+                        "  LEFT JOIN event_attendance ea " +
+                        "    ON uf.user_id = ea.user_id " +
+                        "   AND uf.event_id = ea.event_id " +
+                        " WHERE uf.event_id = :eventId " +
+                        "   AND ea.id IS NULL";
+
+        Object raw = em
+                .createNativeQuery(sql)
+                .setParameter("eventId", eventId)
+                .getSingleResult();
+
+        Number number = (Number) raw;
+        return number.longValue();
+    }
+
 
     // Create a new event associated with a business account
     @Transactional

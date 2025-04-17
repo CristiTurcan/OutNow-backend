@@ -11,4 +11,9 @@ import java.util.List;
 
 public interface UserRepo extends JpaRepository<User, Integer> {
     User findByEmail(String email);
+    @Query("SELECT COUNT(u) FROM User u JOIN u.favoritedEvents e WHERE e.eventId = :eventId")
+    long countByFavoritedEvents_EventId(@Param("eventId") Integer eventId);
+
+    @Query("SELECT COUNT(u) FROM User u JOIN u.goingEvents e WHERE e.eventId = :eventId")
+    long countAttendeesByEventId(@Param("eventId") Integer eventId);
 }
