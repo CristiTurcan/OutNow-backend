@@ -1,5 +1,9 @@
 package com.example.outnowbackend.user.service;
 
+import com.example.outnowbackend.businessaccount.domain.BusinessAccount;
+import com.example.outnowbackend.businessaccount.dto.BusinessAccountDTO;
+import com.example.outnowbackend.businessaccount.mapper.BusinessAccountMapper;
+import com.example.outnowbackend.businessaccount.repository.BusinessAccountRepo;
 import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.event.mapper.EventMapper;
 import com.example.outnowbackend.user.domain.User;
@@ -30,22 +34,8 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final EventMapper eventMapper;  // Injected mapper
     private final UserMapper userMapper;
-
-
-    // Conversion helper: entity -> DTO
-//    private UserDTO convertToDTO(User user) {
-//        UserDTO dto = new UserDTO();
-//        dto.setUserid(user.getUserid());
-//        dto.setEmail(user.getEmail());
-//        dto.setUsername(user.getUsername());
-//        dto.setUserPhoto(user.getUserPhoto());
-//        dto.setBio(user.getBio());
-//        dto.setGender(user.getGender());
-//        dto.setDateOfBirth(user.getDateOfBirth().format(DateTimeFormatter.ISO_LOCAL_DATE));
-//        dto.setLocation(user.getLocation());
-//        dto.setInterestList(user.getInterestList());
-//        return dto;
-//    }
+    private final BusinessAccountRepo businessAccountRepo;
+    private final BusinessAccountMapper businessAccountMapper;
 
     @Transactional
     public UserDTO createUser(User user) {
@@ -211,4 +201,40 @@ public class UserService {
         }
         return userMapper.toDTO(userRepo.save(existingUser));
     }
+
+    @Transactional
+    public void followBusinessAccount(Integer userId, Integer businessAccountId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        BusinessAccount ba = businessAccountRepo.findById(businessAccountId)
+                .orElseThrow(() -> new IllegalArgumentException("Business account not found"));
+
+        user.getFollowedAccounts().add(ba);
+        userRepo.save(user);
+    }
+
+    @Transactional
+    public void unfollowBusinessAccount(Integer userId, Integer businessAccountId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        BusinessAccount ba = businessAccountRepo.findById(businessAccountId)
+                .orElseThrow(() -> new IllegalArgumentException("Business account not found"));
+
+        boolean removed = user.getFollowedAccounts().remove(ba);
+        if (removed) {
+            userRepo.save(user);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Set<BusinessAccountDTO> getFollowedBusinessAccounts(Integer userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        // force initialize if lazy
+        user.getFollowedAccounts().size();
+        return user.getFollowedAccounts().stream()
+                .map(businessAccountMapper::toDTO)
+                .collect(Collectors.toSet());
+    }
+
 }

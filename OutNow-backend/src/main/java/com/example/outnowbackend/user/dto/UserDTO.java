@@ -1,7 +1,7 @@
 package com.example.outnowbackend.user.dto;
 
 import lombok.Data;
-import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 public class UserDTO {
@@ -14,4 +14,5 @@ public class UserDTO {
     private String dateOfBirth;
     private String location;
     private String interestList;
+    private Set<Integer> followedBusinessAccountIds;
 }

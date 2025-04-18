@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.stream.Collectors;
 
 @Component
 public class UserMapper {
@@ -31,9 +32,17 @@ public class UserMapper {
         dto.setGender(user.getGender());
         dto.setLocation(user.getLocation());
         dto.setInterestList(user.getInterestList());
-
         if (user.getDateOfBirth() != null) {
             dto.setDateOfBirth(user.getDateOfBirth().format(dateFormatter));
+        }
+        // NEW: map followed business-account IDs
+        if (user.getFollowedAccounts() != null) {
+            dto.setFollowedBusinessAccountIds(
+                    user.getFollowedAccounts()
+                            .stream()
+                            .map(ba -> ba.getId())
+                            .collect(Collectors.toSet())
+            );
         }
         return dto;
     }

@@ -4,25 +4,25 @@ import com.example.outnowbackend.businessaccount.domain.BusinessAccount;
 import com.example.outnowbackend.businessaccount.dto.BusinessAccountDTO;
 import com.example.outnowbackend.businessaccount.mapper.BusinessAccountMapper;
 import com.example.outnowbackend.businessaccount.repository.BusinessAccountRepo;
+import com.example.outnowbackend.user.domain.User;
+import com.example.outnowbackend.user.dto.UserDTO;
+import com.example.outnowbackend.user.mapper.UserMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class BusinessAccountService {
 
     private final BusinessAccountRepo businessAccountRepository;
     private final BusinessAccountMapper businessAccountMapper;
-
-    @Autowired
-    public BusinessAccountService(BusinessAccountRepo businessAccountRepository,
-                                  BusinessAccountMapper businessAccountMapper) {
-        this.businessAccountRepository = businessAccountRepository;
-        this.businessAccountMapper = businessAccountMapper;
-    }
+    private final UserMapper userMapper;
 
     public BusinessAccountDTO createBusinessAccount(BusinessAccount businessAccount) {
         BusinessAccount created = businessAccountRepository.save(businessAccount);
@@ -100,6 +100,24 @@ public class BusinessAccountService {
         }
         BusinessAccount updated = businessAccountRepository.save(existingAccount);
         return businessAccountMapper.toDTO(updated);
+    }
+
+    @Transactional(readOnly = true)
+    public long getFollowersCount(Integer businessAccountId) {
+        return businessAccountRepository.countFollowersByBusinessAccountId(businessAccountId);
+    }
+
+    @Transactional(readOnly = true)
+    public Set<UserDTO> getFollowers(Integer businessAccountId) {
+        BusinessAccount account = businessAccountRepository.findById(businessAccountId)
+                .orElseThrow(() -> new IllegalArgumentException("Business account not found"));
+        // initialize lazy collection
+        Set<User> followers = account.getFollowers();
+        followers.size();
+
+        return followers.stream()
+                .map(userMapper::toDTO)
+                .collect(Collectors.toSet());
     }
 
     public void deleteBusinessAccount(Integer id) {

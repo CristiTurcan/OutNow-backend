@@ -11,4 +11,6 @@ public class BusinessAccountDTO {
     private String bio;
     private String location;
     private String interestList;
+    private Long followerCount;
+
 }

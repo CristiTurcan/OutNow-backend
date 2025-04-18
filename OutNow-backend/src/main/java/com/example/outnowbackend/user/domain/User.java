@@ -1,5 +1,6 @@
 package com.example.outnowbackend.user.domain;
 
+import com.example.outnowbackend.businessaccount.domain.BusinessAccount;
 import com.example.outnowbackend.event.domain.Event;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 
 @NoArgsConstructor
@@ -16,6 +18,7 @@ import java.util.Set;
 @Data
 @Entity
 @Table(name = "appuser")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
 
     @Id
@@ -64,4 +67,13 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "event_id")
     )
     private Set<Event> goingEvents;
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_followed_business_accounts",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "business_account_id")
+    )
+    private Set<BusinessAccount> followedAccounts = new HashSet<>();
+
 }

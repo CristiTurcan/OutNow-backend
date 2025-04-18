@@ -1,5 +1,6 @@
 package com.example.outnowbackend.user.controller;
 
+import com.example.outnowbackend.businessaccount.dto.BusinessAccountDTO;
 import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.user.dto.UserDTO;
 import com.example.outnowbackend.user.domain.User;
@@ -113,6 +114,41 @@ public class UserController {
     public ResponseEntity<Set<EventDTO>> getUserGoingEvents(@PathVariable Integer userId) {
         Set<EventDTO> going = userService.getUserGoingEvents(userId);
         return ResponseEntity.ok(going);
+    }
+
+    @PostMapping("/{userId}/follow/{businessAccountId}")
+    public ResponseEntity<?> followBusinessAccount(
+            @PathVariable Integer userId,
+            @PathVariable Integer businessAccountId) {
+        try {
+            userService.followBusinessAccount(userId, businessAccountId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{userId}/follow/{businessAccountId}")
+    public ResponseEntity<?> unfollowBusinessAccount(
+            @PathVariable Integer userId,
+            @PathVariable Integer businessAccountId) {
+        try {
+            userService.unfollowBusinessAccount(userId, businessAccountId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{userId}/followed-business-accounts")
+    public ResponseEntity<Set<BusinessAccountDTO>> getFollowedBusinessAccounts(
+            @PathVariable Integer userId) {
+        try {
+            Set<BusinessAccountDTO> followed = userService.getFollowedBusinessAccounts(userId);
+            return ResponseEntity.ok(followed);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
 }
