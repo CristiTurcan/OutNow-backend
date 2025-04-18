@@ -19,6 +19,22 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class UserController {
 
+    // helper DTO for visibility updates
+    public static class VisibilityUpdateRequest {
+        @com.fasterxml.jackson.annotation.JsonProperty("showDob")
+        public Boolean showDob;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("showLocation")
+        public Boolean showLocation;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("showGender")
+        public Boolean showGender;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("showInterests")
+        public Boolean showInterests;
+    }
+
+
     private final ObjectMapper objectMapper;
     private final UserService userService;
 
@@ -150,5 +166,20 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @PutMapping("/{userId}/visibility")
+    public ResponseEntity<UserDTO> updateVisibilityFlags(
+            @PathVariable Integer userId,
+            @RequestBody VisibilityUpdateRequest body) {
+
+        UserDTO dto = userService.updateVisibilityFlags(
+                userId,
+                body.showDob,
+                body.showLocation,
+                body.showGender,
+                body.showInterests);
+        return ResponseEntity.ok(dto);
+    }
+
 
 }

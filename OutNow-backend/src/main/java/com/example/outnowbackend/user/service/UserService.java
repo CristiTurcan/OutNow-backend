@@ -39,6 +39,11 @@ public class UserService {
 
     @Transactional
     public UserDTO createUser(User user) {
+//        if (user.getShowDob()       == null) user.setShowDob(true);
+//        if (user.getShowLocation()  == null) user.setShowLocation(true);
+//        if (user.getShowGender()    == null) user.setShowGender(true);
+//        if (user.getShowInterests() == null) user.setShowInterests(true);
+
         User created = userRepo.save(user);
         return userMapper.toDTO(created);
     }
@@ -157,20 +162,27 @@ public class UserService {
     @Transactional
     public UserDTO upsertUser(User user) {
         try {
-            logger.debug("Attempting to upsert user with email: {}", user.getEmail());
             User existingUser = userRepo.findByEmail(user.getEmail());
-            if (existingUser != null) {
-                logger.debug("User exists, updating user: {}", existingUser);
+
+            if (existingUser != null) {                     // --- update path
+                if (user.getShowDob()       != null) existingUser.setShowDob(user.getShowDob());
+                if (user.getShowLocation()  != null) existingUser.setShowLocation(user.getShowLocation());
+                if (user.getShowGender()    != null) existingUser.setShowGender(user.getShowGender());
+                if (user.getShowInterests() != null) existingUser.setShowInterests(user.getShowInterests());
                 return userMapper.toDTO(userRepo.save(existingUser));
-            } else {
-                logger.debug("User does not exist, creating new user");
+            } else {                                        // --- insert path
+//                if (user.getShowDob()       == null) user.setShowDob(true);
+//                if (user.getShowLocation()  == null) user.setShowLocation(true);
+//                if (user.getShowGender()    == null) user.setShowGender(true);
+//                if (user.getShowInterests() == null) user.setShowInterests(true);
                 return userMapper.toDTO(userRepo.save(user));
             }
         } catch (Exception e) {
-            logger.error("Error upserting user with email {}: {}", user.getEmail(), e.getMessage(), e);
+            logger.error("Error upserting user {}", user.getEmail(), e);
             throw new RuntimeException("Failed to upsert user", e);
         }
     }
+
 
     @Transactional
     public UserDTO updateUserProfile(User user) {
@@ -198,6 +210,18 @@ public class UserService {
         }
         if (user.getInterestList() != null) {
             existingUser.setInterestList(user.getInterestList());
+        }
+        if (user.getShowDob() != null) {
+            existingUser.setShowDob(user.getShowDob());
+        }
+        if (user.getShowLocation() != null) {
+            existingUser.setShowLocation(user.getShowLocation());
+        }
+        if (user.getShowGender() != null) {
+            existingUser.setShowGender(user.getShowGender());
+        }
+        if (user.getShowInterests() != null) {
+            existingUser.setShowInterests(user.getShowInterests());
         }
         return userMapper.toDTO(userRepo.save(existingUser));
     }
@@ -236,5 +260,24 @@ public class UserService {
                 .map(businessAccountMapper::toDTO)
                 .collect(Collectors.toSet());
     }
+
+    @Transactional
+    public UserDTO updateVisibilityFlags(Integer userId,
+                                         Boolean showDob,
+                                         Boolean showLocation,
+                                         Boolean showGender,
+                                         Boolean showInterests) {
+
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (showDob       != null) user.setShowDob(showDob);
+        if (showLocation  != null) user.setShowLocation(showLocation);
+        if (showGender    != null) user.setShowGender(showGender);
+        if (showInterests != null) user.setShowInterests(showInterests);
+
+        return userMapper.toDTO(userRepo.save(user));
+    }
+
 
 }

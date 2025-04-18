@@ -49,6 +49,18 @@ public class User {
     @Column(name = "interest_list")
     private String interestList;
 
+    @Column(name = "show_dob",       nullable = false)
+    private Boolean showDob       = true;
+
+    @Column(name = "show_location",  nullable = false)
+    private Boolean showLocation  = true;
+
+    @Column(name = "show_gender",    nullable = false)
+    private Boolean showGender    = true;
+
+    @Column(name = "show_interests", nullable = false)
+    private Boolean showInterests = true;
+
 
     // Relationship to store favorited events
     @ManyToMany

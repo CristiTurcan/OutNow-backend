@@ -44,6 +44,10 @@ public class UserMapper {
                             .collect(Collectors.toSet())
             );
         }
+        dto.setShowDob(user.getShowDob());
+        dto.setShowLocation(user.getShowLocation());
+        dto.setShowGender(user.getShowGender());
+        dto.setShowInterests(user.getShowInterests());
         return dto;
     }
 
@@ -71,6 +75,10 @@ public class UserMapper {
         if (dto.getDateOfBirth() != null && !dto.getDateOfBirth().isEmpty()) {
             user.setDateOfBirth(LocalDate.parse(dto.getDateOfBirth(), dateFormatter));
         }
+        user.setShowDob(dto.getShowDob());
+        user.setShowLocation(dto.getShowLocation());
+        user.setShowGender(dto.getShowGender());
+        user.setShowInterests(dto.getShowInterests());
         return user;
     }
 }
