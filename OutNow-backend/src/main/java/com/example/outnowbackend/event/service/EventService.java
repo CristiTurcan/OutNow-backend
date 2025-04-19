@@ -9,6 +9,8 @@ import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.user.repository.UserRepo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -112,6 +114,49 @@ public class EventService {
         return eventMapper.toDTO(event);
     }
 
+    public List<EventDTO> searchEvents(String q) {
+        // Compute once, so these are effectively final
+        final Double maxPrice = (q != null && q.matches("^\\d+(\\.\\d+)?$"))
+                ? Double.parseDouble(q)
+                : null;
+        final String text = (maxPrice == null) ? q : null;
+
+        SearchSession search = Search.session(em);
+        List<Event> hits = search.search(Event.class)
+                .where(f -> f.bool(b -> {
+                    // text clause
+                    if (text != null && !text.isBlank()) {
+                        b.must(f.bool(inner -> {
+                            inner.should(f.match()
+                                    .fields("title", "location",
+                                            "businessAccount.username", "interestList")
+                                    .matching(text)
+                                    .fuzzy(2));
+                            inner.should(f.prefix()
+                                    .fields("title", "location",
+                                            "businessAccount.username", "interestList")
+                                    .matching(text.toLowerCase()));
+                        }));
+                    }
+                    // numeric clause
+                    if (maxPrice != null) {
+                        b.must(f.range()
+                                .field("price")
+                                .atMost(maxPrice));
+                    }
+                }))
+                .sort(f -> {
+                    if (maxPrice != null) {
+                        return f.field("price").asc();
+                    }
+                    return f.score();
+                })
+                .fetchHits(50);
+
+        return hits.stream()
+                .map(eventMapper::toDTO)
+                .toList();
+    }
 
 
     // Delete event by id

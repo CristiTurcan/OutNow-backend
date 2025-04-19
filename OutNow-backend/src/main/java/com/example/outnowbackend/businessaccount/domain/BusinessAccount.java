@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -29,6 +30,7 @@ public class BusinessAccount {
     private String email;
 
     @Column(nullable = false, unique = true)
+    @FullTextField
     private String username;
 
     @Column(name = "user_photo", columnDefinition = "text")

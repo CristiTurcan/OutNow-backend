@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -73,6 +74,15 @@ public class EventController {
     public ResponseEntity<Long> getUniqueFavoriteCount(@PathVariable Integer eventId) {
         return ResponseEntity.ok(eventService.getUniqueFavoriteCount(eventId));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<EventDTO>> searchEvents(
+            @RequestParam(required = false) String q
+    ) {
+        List<EventDTO> results = eventService.searchEvents(q);
+        return ResponseEntity.ok(results);
+    }
+
 
     // Delete event by id
     @DeleteMapping("/{eventId}")
