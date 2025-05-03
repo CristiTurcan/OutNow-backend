@@ -35,7 +35,6 @@ public class UserMapper {
         if (user.getDateOfBirth() != null) {
             dto.setDateOfBirth(user.getDateOfBirth().format(dateFormatter));
         }
-        // NEW: map followed business-account IDs
         if (user.getFollowedAccounts() != null) {
             dto.setFollowedBusinessAccountIds(
                     user.getFollowedAccounts()

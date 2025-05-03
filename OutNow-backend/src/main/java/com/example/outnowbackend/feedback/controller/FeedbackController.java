@@ -17,8 +17,6 @@ public class FeedbackController {
 
     private final FeedbackService feedbackService;
 
-    // Endpoint for a user to add feedback after an event is completed.
-    // The rating is required, and the comment is optional.
     @PostMapping("/event/{eventId}/user/{userId}")
     public ResponseEntity<FeedbackDTO> addFeedback(
             @PathVariable Integer eventId,
@@ -34,9 +32,6 @@ public class FeedbackController {
         return ResponseEntity.ok(createdFeedback);
     }
 
-
-
-    // Endpoint for a business account to view feedback for one of its events.
     @GetMapping("/event/{eventId}")
     public ResponseEntity<List<FeedbackDTO>> getFeedbackForEvent(@PathVariable Integer eventId) {
         List<FeedbackDTO> feedbackList = feedbackService.getFeedbackForEvent(eventId);

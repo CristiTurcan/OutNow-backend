@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -22,7 +22,7 @@ import java.util.Set;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Automatically generate IDs
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
     private Integer userid;
 
@@ -49,14 +49,14 @@ public class User {
     @Column(name = "interest_list")
     private String interestList;
 
-    @Column(name = "show_dob",       nullable = false)
-    private Boolean showDob       = true;
+    @Column(name = "show_dob", nullable = false)
+    private Boolean showDob = true;
 
-    @Column(name = "show_location",  nullable = false)
-    private Boolean showLocation  = true;
+    @Column(name = "show_location", nullable = false)
+    private Boolean showLocation = true;
 
-    @Column(name = "show_gender",    nullable = false)
-    private Boolean showGender    = true;
+    @Column(name = "show_gender", nullable = false)
+    private Boolean showGender = true;
 
     @Column(name = "show_interests", nullable = false)
     private Boolean showInterests = true;

@@ -3,19 +3,25 @@ package com.example.outnowbackend.event.service;
 import com.example.outnowbackend.businessaccount.domain.BusinessAccount;
 import com.example.outnowbackend.businessaccount.repository.BusinessAccountRepo;
 import com.example.outnowbackend.event.domain.Event;
+import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.event.mapper.EventMapper;
 import com.example.outnowbackend.event.repository.EventRepo;
-import com.example.outnowbackend.event.dto.EventDTO;
+import com.example.outnowbackend.notification.domain.NotificationType;
+import com.example.outnowbackend.notification.service.DeviceTokenService;
+import com.example.outnowbackend.notification.service.NotificationService;
+import com.example.outnowbackend.notification.service.PushNotificationService;
+import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.repository.UserRepo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import lombok.RequiredArgsConstructor;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
-import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -27,6 +33,9 @@ public class EventService {
     private final BusinessAccountRepo businessAccountRepo;
     private final EventMapper eventMapper;
     private final UserRepo userRepo;
+    private final DeviceTokenService tokens;
+    private final PushNotificationService push;
+    private final NotificationService notificationService;
 
     @PersistenceContext
     private EntityManager em;
@@ -61,20 +70,45 @@ public class EventService {
         return number.longValue();
     }
 
-
-    // Create a new event associated with a business account
     @Transactional
     public EventDTO createEvent(Event event, Integer businessAccountId) {
-        Optional<BusinessAccount> account = businessAccountRepo.findById(businessAccountId);
-        if (account.isEmpty()) {
-            throw new RuntimeException("Business account not found");
+        BusinessAccount account = businessAccountRepo.findById(businessAccountId)
+                .orElseThrow(() -> new RuntimeException("Business account not found"));
+        event.setBusinessAccount(account);
+        Event created = eventRepo.save(event);
+
+        // notify followers of organizer
+        List<String> pushTokens = account.getFollowers()
+                .stream()
+                .map(User::getUserid)
+                .flatMap(id -> tokens.getTokensForUser(id).stream())
+                .collect(Collectors.toList());
+
+        if (!pushTokens.isEmpty()) {
+            push.sendPush(
+                    pushTokens,
+                    "New event from " + account.getUsername(),
+                    "“" + created.getTitle() + "” is now live!",
+                    Map.of("eventId", created.getEventId())
+            );
         }
-        event.setBusinessAccount(account.get());
-        Event createdEvent = eventRepo.save(event);
-        return eventMapper.toDTO(createdEvent);
+
+        // persist in-app notification for every follower
+        account.getFollowers()
+                .stream()
+                .map(User::getUserid)
+                .forEach(followerId ->
+                        notificationService.createNotification(
+                                followerId,
+                                "New event from " + account.getUsername(),
+                                "Your favorite organizer " + account.getUsername() +
+                                        " just posted “" + created.getTitle() + "”", NotificationType.NEW_EVENT, event.getEventId()
+                        )
+                );
+
+        return eventMapper.toDTO(created);
     }
 
-    // Retrieve all events
     public List<EventDTO> getAllEvents() {
         return eventRepo.findAll().stream()
                 .map(eventMapper::toDTO)
@@ -95,27 +129,90 @@ public class EventService {
                 .collect(Collectors.toList());
     }
 
-    // Update existing event details
     @Transactional
     public EventDTO updateEvent(Integer eventId, Event updatedEvent) {
+        Event existing = eventRepo.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
 
-        Event event = eventRepo.findById(eventId).map(existing -> {
-            existing.setTitle(updatedEvent.getTitle());
-            existing.setDescription(updatedEvent.getDescription());
-            existing.setImageUrl(updatedEvent.getImageUrl());
-            existing.setLocation(updatedEvent.getLocation());
-            existing.setPrice(updatedEvent.getPrice());
-            existing.setEventDate(updatedEvent.getEventDate());
-            existing.setEventTime(updatedEvent.getEventTime());
-            existing.setInterestList(updatedEvent.getInterestList());
+        // detect changes across every field
+        StringBuilder changes = new StringBuilder();
 
-            return eventRepo.save(existing);
-        }).orElseThrow(() -> new RuntimeException("Event not found"));
-        return eventMapper.toDTO(event);
+        if (!existing.getTitle().equals(updatedEvent.getTitle())) {
+            changes.append("Title: ").append(updatedEvent.getTitle()).append('\n');
+        }
+        if (!existing.getDescription().equals(updatedEvent.getDescription())) {
+            changes.append("Description: ").append(updatedEvent.getDescription()).append("\n");
+        }
+//        if (!existing.getImageUrl().equals(updatedEvent.getImageUrl())) {
+//            changes.append("Image: ").append(updatedEvent.getImageUrl()).append("; ");
+//        }
+        if (!existing.getLocation().equals(updatedEvent.getLocation())) {
+            changes.append("Location: ").append(updatedEvent.getLocation()).append('\n');
+        }
+        if (!existing.getPrice().equals(updatedEvent.getPrice())) {
+            changes.append("Price: ").append(updatedEvent.getPrice()).append("\n");
+        }
+        if (!existing.getEventDate().equals(updatedEvent.getEventDate())) {
+            changes.append("Date: ").append(updatedEvent.getEventDate()).append("\n");
+        }
+        if (!existing.getEventTime().equals(updatedEvent.getEventTime())) {
+            changes.append("Time: ").append(updatedEvent.getEventTime()).append("\n");
+        }
+        if (!existing.getInterestList().equals(updatedEvent.getInterestList())) {
+            changes.append("Interests: ").append(updatedEvent.getInterestList()).append("\n");
+        }
+
+        // remove trailing newline if present
+        if (!changes.isEmpty() && changes.charAt(changes.length() - 1) == '\n') {
+            changes.deleteCharAt(changes.length() - 1);
+        }
+
+        // apply updates
+        existing.setTitle(updatedEvent.getTitle());
+        existing.setDescription(updatedEvent.getDescription());
+        existing.setImageUrl(updatedEvent.getImageUrl());
+        existing.setLocation(updatedEvent.getLocation());
+        existing.setPrice(updatedEvent.getPrice());
+        existing.setEventDate(updatedEvent.getEventDate());
+        existing.setEventTime(updatedEvent.getEventTime());
+        existing.setInterestList(updatedEvent.getInterestList());
+        Event saved = eventRepo.save(existing);
+
+        System.out.println("[updateEvent] called for eventId={} with changes: {}" + eventId + changes);
+
+        // if any key fields changed, notify attendees
+        if (!changes.isEmpty()) {
+            List<Integer> attendeeIds = userRepo.findAttendeeIdsByEventId(eventId);
+            System.out.println("Attendee count: " + attendeeIds.size());
+
+            List<String> pushTokens = attendeeIds.stream()
+                    .flatMap(id -> tokens.getTokensForUser(id).stream())
+                    .collect(Collectors.toList());
+
+            System.out.println("Attendee count: " + saved.getAttendees().size());
+
+            if (!pushTokens.isEmpty()) {
+                push.sendPush(
+                        pushTokens,
+                        "Event updated: " + saved.getTitle(),
+                        changes.toString(),
+                        Map.of("eventId", saved.getEventId())
+                );
+            }
+
+            attendeeIds.forEach(uid ->
+                    notificationService.createNotification(
+                            uid,
+                            "Event updated: " + saved.getTitle(),
+                            changes.toString(), NotificationType.EVENT_UPDATED, existing.getEventId()
+                    )
+            );
+        }
+
+        return eventMapper.toDTO(saved);
     }
 
     public List<EventDTO> searchEvents(String q) {
-        // Compute once, so these are effectively final
         final Double maxPrice = (q != null && q.matches("^\\d+(\\.\\d+)?$"))
                 ? Double.parseDouble(q)
                 : null;
@@ -124,7 +221,6 @@ public class EventService {
         SearchSession search = Search.session(em);
         List<Event> hits = search.search(Event.class)
                 .where(f -> f.bool(b -> {
-                    // text clause
                     if (text != null && !text.isBlank()) {
                         b.must(f.bool(inner -> {
                             inner.should(f.match()
@@ -138,7 +234,6 @@ public class EventService {
                                     .matching(text.toLowerCase()));
                         }));
                     }
-                    // numeric clause
                     if (maxPrice != null) {
                         b.must(f.range()
                                 .field("price")
@@ -159,9 +254,33 @@ public class EventService {
     }
 
 
-    // Delete event by id
     @Transactional
     public void deleteEvent(Integer eventId) {
+        Event toCancel = eventRepo.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        List<Integer> attendeeIds = userRepo.findAttendeeIdsByEventId(eventId);
+
+        String title = "Event canceled: " + toCancel.getTitle();
+        String body = "We're sorry, \"" + toCancel.getTitle() + "\" has been canceled.";
+
+        attendeeIds.forEach(uid ->
+                notificationService.createNotification(uid, title, body, NotificationType.EVENT_CANCELED, toCancel.getEventId())
+        );
+
+        List<String> pushTokens = attendeeIds.stream()
+                .flatMap(id -> tokens.getTokensForUser(id).stream())
+                .toList();
+
+        if (!pushTokens.isEmpty()) {
+            push.sendPush(
+                    pushTokens,
+                    title,
+                    body,
+                    Map.of("eventId", toCancel.getEventId())
+            );
+        }
+
         eventRepo.deleteById(eventId);
     }
 }

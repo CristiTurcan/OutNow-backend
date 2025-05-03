@@ -1,7 +1,7 @@
 package com.example.outnowbackend.event.controller;
 
-import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.event.domain.Event;
+import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.event.service.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,7 +19,6 @@ public class EventController {
 
     private final EventService eventService;
 
-    // Create a new event
     @PostMapping("/{businessAccountId}")
     public ResponseEntity<EventDTO> createEvent(@RequestBody Event event,
                                                 @PathVariable Integer businessAccountId) {
@@ -27,13 +26,11 @@ public class EventController {
         return new ResponseEntity<>(createdEvent, HttpStatus.CREATED);
     }
 
-    // Get all events
     @GetMapping
     public ResponseEntity<List<EventDTO>> getAllEvents() {
         return ResponseEntity.ok(eventService.getAllEvents());
     }
 
-    // Get event by id
     @GetMapping("/{eventId}")
     public ResponseEntity<EventDTO> getEventById(@PathVariable Integer eventId) {
         Optional<EventDTO> eventDto = eventService.getEventById(eventId);
@@ -41,14 +38,12 @@ public class EventController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Get events by business account
     @GetMapping("/business/{businessAccountId}")
     public ResponseEntity<List<EventDTO>> getEventsByBusinessAccount(@PathVariable Integer businessAccountId) {
         List<EventDTO> events = eventService.getEventsByBusinessAccount(businessAccountId);
         return ResponseEntity.ok(events);
     }
 
-    // Update event by id
     @PutMapping("/{eventId}")
     public ResponseEntity<EventDTO> updateEvent(@PathVariable Integer eventId,
                                                 @RequestBody Event updatedEvent) {
@@ -84,7 +79,6 @@ public class EventController {
     }
 
 
-    // Delete event by id
     @DeleteMapping("/{eventId}")
     public ResponseEntity<Void> deleteEvent(@PathVariable Integer eventId) {
         eventService.deleteEvent(eventId);

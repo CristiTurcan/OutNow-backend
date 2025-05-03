@@ -10,8 +10,8 @@ import java.util.Optional;
 
 @Repository
 public interface BusinessAccountRepo extends JpaRepository<BusinessAccount, Integer> {
-    // Add custom query methods if needed
     Optional<BusinessAccount> findByEmail(String email);
+
     @Query("SELECT COUNT(u) FROM User u JOIN u.followedAccounts ba WHERE ba.id = :businessAccountId")
     long countFollowersByBusinessAccountId(@Param("businessAccountId") Integer businessAccountId);
 }

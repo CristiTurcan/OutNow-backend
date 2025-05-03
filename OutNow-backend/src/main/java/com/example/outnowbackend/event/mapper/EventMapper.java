@@ -3,6 +3,7 @@ package com.example.outnowbackend.event.mapper;
 import com.example.outnowbackend.event.domain.Event;
 import com.example.outnowbackend.event.dto.EventDTO;
 import org.springframework.stereotype.Component;
+
 import java.time.format.DateTimeFormatter;
 
 @Component
@@ -34,6 +35,4 @@ public class EventMapper {
         dto.setInterestList(event.getInterestList());
         return dto;
     }
-
-    // Optionally, provide a method to convert a DTO back to an entity if necessary.
 }

@@ -2,7 +2,6 @@ package com.example.outnowbackend.businessaccount.domain;
 
 import com.example.outnowbackend.event.domain.Event;
 import com.example.outnowbackend.user.domain.User;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,7 +17,7 @@ import java.util.Set;
 @Data
 @Entity
 @Table(name = "business_account")
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)   // <-- add this
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class BusinessAccount {
 
     @Id

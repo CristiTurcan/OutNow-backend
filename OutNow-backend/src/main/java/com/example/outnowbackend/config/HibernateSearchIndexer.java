@@ -21,7 +21,6 @@ public class HibernateSearchIndexer {
     public void initializeHibernateSearch() {
         SearchSession searchSession = Search.session(entityManager);
         try {
-            // This will run inside a Spring‑managed transaction
             searchSession.massIndexer(Event.class)
                     .threadsToLoadObjects(4)
                     .startAndWait();

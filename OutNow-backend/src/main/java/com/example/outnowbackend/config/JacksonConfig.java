@@ -10,7 +10,6 @@ public class JacksonConfig {
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        // Register the module that supports Java 8 Date/Time API
         mapper.registerModule(new JavaTimeModule());
         return mapper;
     }

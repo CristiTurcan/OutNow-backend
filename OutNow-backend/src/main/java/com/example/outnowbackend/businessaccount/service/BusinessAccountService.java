@@ -8,9 +8,9 @@ import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.dto.UserDTO;
 import com.example.outnowbackend.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -46,7 +46,6 @@ public class BusinessAccountService {
                 .map(businessAccountMapper::toDTO);
     }
 
-    // If you need the raw entity in some cases, you can keep this helper.
     public Optional<BusinessAccount> getBusinessAccountEntityByEmail(String email) {
         return businessAccountRepository.findByEmail(email);
     }
@@ -111,7 +110,6 @@ public class BusinessAccountService {
     public Set<UserDTO> getFollowers(Integer businessAccountId) {
         BusinessAccount account = businessAccountRepository.findById(businessAccountId)
                 .orElseThrow(() -> new IllegalArgumentException("Business account not found"));
-        // initialize lazy collection
         Set<User> followers = account.getFollowers();
         followers.size();
 

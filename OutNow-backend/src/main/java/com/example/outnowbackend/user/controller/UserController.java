@@ -2,15 +2,15 @@ package com.example.outnowbackend.user.controller;
 
 import com.example.outnowbackend.businessaccount.dto.BusinessAccountDTO;
 import com.example.outnowbackend.event.dto.EventDTO;
-import com.example.outnowbackend.user.dto.UserDTO;
 import com.example.outnowbackend.user.domain.User;
+import com.example.outnowbackend.user.dto.UserDTO;
 import com.example.outnowbackend.user.service.UserService;
-import com.example.outnowbackend.event.domain.Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import lombok.RequiredArgsConstructor;
+
 import java.util.Set;
 
 @RestController
@@ -18,22 +18,6 @@ import java.util.Set;
 @RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
-
-    // helper DTO for visibility updates
-    public static class VisibilityUpdateRequest {
-        @com.fasterxml.jackson.annotation.JsonProperty("showDob")
-        public Boolean showDob;
-
-        @com.fasterxml.jackson.annotation.JsonProperty("showLocation")
-        public Boolean showLocation;
-
-        @com.fasterxml.jackson.annotation.JsonProperty("showGender")
-        public Boolean showGender;
-
-        @com.fasterxml.jackson.annotation.JsonProperty("showInterests")
-        public Boolean showInterests;
-    }
-
 
     private final ObjectMapper objectMapper;
     private final UserService userService;
@@ -179,6 +163,20 @@ public class UserController {
                 body.showGender,
                 body.showInterests);
         return ResponseEntity.ok(dto);
+    }
+
+    public static class VisibilityUpdateRequest {
+        @com.fasterxml.jackson.annotation.JsonProperty("showDob")
+        public Boolean showDob;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("showLocation")
+        public Boolean showLocation;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("showGender")
+        public Boolean showGender;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("showInterests")
+        public Boolean showInterests;
     }
 
 
