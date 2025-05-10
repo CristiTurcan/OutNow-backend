@@ -12,6 +12,8 @@ import com.example.outnowbackend.notification.service.NotificationService;
 import com.example.outnowbackend.notification.service.PushNotificationService;
 import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.repository.UserRepo;
+import com.example.outnowbackend.config.PersonalizationProperties;
+import com.example.outnowbackend.event.ScoredEvent;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +23,10 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +41,7 @@ public class EventService {
     private final PushNotificationService push;
     private final NotificationService notificationService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final PersonalizationProperties personalizationProperties;
 
     @PersistenceContext
     private EntityManager em;
@@ -290,4 +294,91 @@ public class EventService {
         eventRepo.deleteById(eventId);
         messagingTemplate.convertAndSend("/topic/eventDeleted", eventId);
     }
+
+    @Transactional(readOnly = true)
+    public List<EventDTO> getPersonalizedForUser(Integer userId) {
+        User user = userRepo.findById(userId).orElseThrow();
+        List<ScoredEvent> scored = eventRepo
+                .findUpcoming(LocalDate.now(), LocalTime.now())
+                .stream()
+                .map(eventMapper::toDTO)
+                .map(dto -> computeFeatures(dto, user.getInterestList()))
+                .collect(Collectors.toList());
+        normalizePopularity(scored);
+        scored.forEach(this::computeRawScore);
+        return diversify(scored).stream()
+                .map(ScoredEvent::getEvent)
+                .collect(Collectors.toList());
+    }
+
+    private ScoredEvent computeFeatures(EventDTO dto, String userInterests) {
+        ScoredEvent se = new ScoredEvent(dto);
+
+        // interest match
+        se.interestScore = jaccard(userInterests, dto.getInterestList());
+
+        // time decay
+        LocalDate eventDate = LocalDate.parse(dto.getEventDate());
+        long days = ChronoUnit.DAYS.between(LocalDate.now(), eventDate);
+        se.timeScore = days < 0
+                ? 0.0
+                : Math.exp(-personalizationProperties.getDecayAlpha() * days);
+
+        // raw popularity & rating (mapper already populated those)
+        se.popRaw     = Math.sqrt(dto.getFavoriteCount() + dto.getAttendanceCount());
+        se.ratingScore= dto.getAverageRating();
+
+        return se;
+    }
+
+    private void normalizePopularity(List<ScoredEvent> list) {
+        double min = list.stream().mapToDouble(s -> s.popRaw).min().orElse(0);
+        double max = list.stream().mapToDouble(s -> s.popRaw).max().orElse(1);
+        list.forEach(s -> s.popScore = (s.popRaw - min) / (max - min));
+    }
+
+    private void computeRawScore(ScoredEvent s) {
+        var w = personalizationProperties.getWeights();
+        s.rawScore = w.getInterest()*s.interestScore
+                + w.getTime()*s.timeScore
+                + w.getPopularity()*s.popScore
+                + w.getRating()*s.ratingScore;
+    }
+
+    private List<ScoredEvent> diversify(List<ScoredEvent> scored) {
+        List<ScoredEvent> R = scored.stream()
+                .sorted(Comparator.comparingDouble((ScoredEvent s) -> s.rawScore).reversed())
+                .limit(50)
+                .collect(Collectors.toList());
+
+        List<ScoredEvent> chosen = new ArrayList<>();
+        if (!R.isEmpty()) chosen.add(R.remove(0));
+
+        while (!R.isEmpty() && chosen.size() < 20) {
+            ScoredEvent next = R.stream()
+                    .max(Comparator.comparingDouble(s ->
+                            personalizationProperties.getMmrLambda()*s.rawScore
+                                    - (1 - personalizationProperties.getMmrLambda())*maxSim(s, chosen)
+                    ))
+                    .get();
+            chosen.add(next);
+            R.remove(next);
+        }
+        return chosen;
+    }
+
+    private double maxSim(ScoredEvent s, List<ScoredEvent> chosen) {
+        return chosen.stream()
+                .mapToDouble(c -> jaccard(s.getEvent().getInterestList(), c.getEvent().getInterestList()))
+                .max().orElse(0);
+    }
+
+    private double jaccard(String a, String b) {
+        var setA = Set.of(a.split(","));
+        var setB = Set.of(b.split(","));
+        long inter = setA.stream().filter(setB::contains).count();
+        long union = setA.size() + setB.size() - inter;
+        return union == 0 ? 0.0 : (double) inter / union;
+    }
+
 }

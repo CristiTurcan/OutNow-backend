@@ -18,4 +18,8 @@ public class EventDTO {
     private String eventDate;
     private String eventTime;
     private String interestList;
+    private Integer favoriteCount;
+    private Integer attendanceCount;
+    private Double  averageRating;
+    private Integer reviewCount;
 }

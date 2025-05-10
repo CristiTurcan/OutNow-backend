@@ -16,4 +16,15 @@ public interface EventRepo extends JpaRepository<Event, Integer> {
     @Query("SELECT e FROM Event e WHERE e.eventDate = :date AND e.eventTime = :time")
     List<Event> findByEventDateAndEventTime(@Param("date") LocalDate date,
                                             @Param("time") LocalTime time);
+
+    @Query("""
+      SELECT e 
+        FROM Event e 
+       WHERE e.eventDate > :today 
+          OR (e.eventDate = :today AND e.eventTime >= :now)
+      """)
+    List<Event> findUpcoming(
+            @Param("today") LocalDate today,
+            @Param("now")   LocalTime now
+    );
 }

@@ -78,10 +78,15 @@ public class EventController {
         return ResponseEntity.ok(results);
     }
 
-
     @DeleteMapping("/{eventId}")
     public ResponseEntity<Void> deleteEvent(@PathVariable Integer eventId) {
         eventService.deleteEvent(eventId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/personalized")
+    public List<EventDTO> getPersonalizedForUser(
+            @RequestParam("userId") Integer userId) {
+        return eventService.getPersonalizedForUser(userId);
     }
 }
