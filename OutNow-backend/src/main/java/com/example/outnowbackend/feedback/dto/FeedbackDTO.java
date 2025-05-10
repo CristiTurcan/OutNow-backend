@@ -1,7 +1,6 @@
 package com.example.outnowbackend.feedback.dto;
 
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Data

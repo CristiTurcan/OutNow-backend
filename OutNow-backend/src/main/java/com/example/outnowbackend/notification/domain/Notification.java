@@ -8,11 +8,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "notification")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Notification {
 
     @Id
@@ -28,15 +24,15 @@ public class Notification {
     @Column(columnDefinition = "TEXT")
     private String body;
 
-    @Column(name = "notification_type", nullable = false)
+    @Column(name="notification_type", nullable=false)
     @Enumerated(EnumType.STRING)
     private NotificationType notificationType;
 
-    @Column(name = "target_id", nullable = true)
+    @Column(name="target_id", nullable=true)
     private Integer targetId;
 
     @Builder.Default
-    @Column(nullable = false, name = "is_read")
+    @Column(nullable = false, name="is_read")
     private Boolean read = false;
 
     @CreationTimestamp

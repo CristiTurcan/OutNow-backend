@@ -1,17 +1,11 @@
 package com.example.outnowbackend.notification.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -22,10 +16,10 @@ public class PushNotificationService {
 
     public void sendPush(List<String> tokens, String title, String body, Map<String, Object> data) {
         for (int i = 0; i < tokens.size(); i += 100) {
-            List<Map<String, Object>> batch = new ArrayList<>();
+            List<Map<String,Object>> batch = new ArrayList<>();
             tokens.subList(i, Math.min(i + 100, tokens.size()))
                     .forEach(token -> {
-                        Map<String, Object> msg = new HashMap<>();
+                        Map<String,Object> msg = new HashMap<>();
                         msg.put("to", token);
                         msg.put("sound", "default");
                         msg.put("title", title);
@@ -36,7 +30,7 @@ public class PushNotificationService {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<List<Map<String, Object>>> req = new HttpEntity<>(batch, headers);
+            HttpEntity<List<Map<String,Object>>> req = new HttpEntity<>(batch, headers);
 
             try {
                 ResponseEntity<String> resp = rest.postForEntity(EXPO_PUSH_URL, req, String.class);

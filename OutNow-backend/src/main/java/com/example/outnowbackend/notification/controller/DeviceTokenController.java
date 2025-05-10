@@ -16,6 +16,12 @@ public class DeviceTokenController {
         this.service = service;
     }
 
+    @Data
+    public static class RegisterRequest {
+        private Integer userId;
+        private String token;
+    }
+
     @PostMapping
     public ResponseEntity<Void> register(@RequestBody RegisterRequest req) {
         service.registerToken(req.getUserId(), req.getToken());
@@ -26,11 +32,5 @@ public class DeviceTokenController {
     public ResponseEntity<Void> unregister(@PathVariable String token) {
         service.unregisterToken(token);
         return ResponseEntity.noContent().build();
-    }
-
-    @Data
-    public static class RegisterRequest {
-        private Integer userId;
-        private String token;
     }
 }

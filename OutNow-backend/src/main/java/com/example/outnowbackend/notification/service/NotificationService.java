@@ -5,8 +5,8 @@ import com.example.outnowbackend.notification.domain.NotificationType;
 import com.example.outnowbackend.notification.dto.NotificationDTO;
 import com.example.outnowbackend.notification.mapper.NotificationMapper;
 import com.example.outnowbackend.notification.repository.NotificationRepo;
-import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

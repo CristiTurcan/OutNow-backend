@@ -17,6 +17,7 @@ import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +37,7 @@ public class EventService {
     private final DeviceTokenService tokens;
     private final PushNotificationService push;
     private final NotificationService notificationService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @PersistenceContext
     private EntityManager em;
@@ -106,7 +108,9 @@ public class EventService {
                         )
                 );
 
-        return eventMapper.toDTO(created);
+        EventDTO dto = eventMapper.toDTO(created);
+        messagingTemplate.convertAndSend("/topic/eventCreated", dto);
+        return dto;
     }
 
     public List<EventDTO> getAllEvents() {
@@ -209,7 +213,9 @@ public class EventService {
             );
         }
 
-        return eventMapper.toDTO(saved);
+        EventDTO dto = eventMapper.toDTO(saved);
+        messagingTemplate.convertAndSend("/topic/eventUpdated", dto);
+        return dto;
     }
 
     public List<EventDTO> searchEvents(String q) {
@@ -282,5 +288,6 @@ public class EventService {
         }
 
         eventRepo.deleteById(eventId);
+        messagingTemplate.convertAndSend("/topic/eventDeleted", eventId);
     }
 }

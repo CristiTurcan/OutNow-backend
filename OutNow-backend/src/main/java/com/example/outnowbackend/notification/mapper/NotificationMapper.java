@@ -3,7 +3,6 @@ package com.example.outnowbackend.notification.mapper;
 import com.example.outnowbackend.notification.domain.Notification;
 import com.example.outnowbackend.notification.dto.NotificationDTO;
 import org.springframework.stereotype.Component;
-
 import java.time.format.DateTimeFormatter;
 
 @Component

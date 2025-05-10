@@ -7,11 +7,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "device_token")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class DeviceToken {
 
     @Id

@@ -1,7 +1,7 @@
 package com.example.outnowbackend.event.controller;
 
-import com.example.outnowbackend.event.domain.Event;
 import com.example.outnowbackend.event.dto.EventDTO;
+import com.example.outnowbackend.event.domain.Event;
 import com.example.outnowbackend.event.service.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
