@@ -18,13 +18,14 @@ public interface EventRepo extends JpaRepository<Event, Integer> {
                                             @Param("time") LocalTime time);
 
     @Query("""
-      SELECT e 
-        FROM Event e 
-       WHERE e.eventDate > :today 
-          OR (e.eventDate = :today AND e.eventTime >= :now)
-      """)
+              SELECT e
+                FROM Event e
+               WHERE e.endDate > :today
+                  OR (e.endDate = :today AND e.endTime >= :now)
+            """)
     List<Event> findUpcoming(
             @Param("today") LocalDate today,
-            @Param("now")   LocalTime now
+            @Param("now") LocalTime now
     );
+
 }

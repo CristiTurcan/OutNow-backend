@@ -5,8 +5,10 @@ import com.example.outnowbackend.businessaccount.dto.BusinessAccountDTO;
 import com.example.outnowbackend.businessaccount.mapper.BusinessAccountMapper;
 import com.example.outnowbackend.businessaccount.repository.BusinessAccountRepo;
 import com.example.outnowbackend.event.domain.Event;
+import com.example.outnowbackend.event.domain.EventAttendance;
 import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.event.mapper.EventMapper;
+import com.example.outnowbackend.event.repository.EventAttendanceRepo;
 import com.example.outnowbackend.event.repository.EventRepo;
 import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.dto.UserDTO;
@@ -33,6 +35,8 @@ public class UserService {
     private final UserMapper userMapper;
     private final BusinessAccountRepo businessAccountRepo;
     private final BusinessAccountMapper businessAccountMapper;
+    private final EventAttendanceRepo attendanceRepo;
+
 
     @Transactional
     public UserDTO createUser(User user) {
@@ -91,20 +95,30 @@ public class UserService {
     }
 
     @Transactional
-    public void addGoingEvent(Integer userId, Integer eventId) {
-        User user = userRepo.findById(userId)
+    public void addGoingEvent(Integer userId, Integer eventId, Integer quantity) {
+        User  user  = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Event event = eventRepo.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
 
+        long sold = attendanceRepo.countByEvent(event);
+        if (event.getTotalTickets() != null && sold + quantity > event.getTotalTickets()) {
+            throw new IllegalArgumentException("Sold out");
+        }
+
+        for (int i = 0; i < quantity; i++) {
+            EventAttendance a = new EventAttendance();
+            a.setUser(user);
+            a.setEvent(event);
+            attendanceRepo.save(a);
+        }
+
         if (!user.getGoingEvents().contains(event)) {
             user.getGoingEvents().add(event);
             userRepo.save(user);
-            logger.info("Event (ID: {}) added to going events for user (ID: {}).", eventId, userId);
-        } else {
-            logger.warn("Event (ID: {}) is already in going events for user (ID: {}).", eventId, userId);
         }
     }
+
 
 
     @Transactional
@@ -113,6 +127,8 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Event event = eventRepo.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
+        attendanceRepo.deleteByUser_UseridAndEvent_EventId(userId, eventId);
 
         boolean removed = user.getGoingEvents().remove(event);
         if (removed) {

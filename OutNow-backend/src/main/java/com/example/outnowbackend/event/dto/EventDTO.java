@@ -22,4 +22,8 @@ public class EventDTO {
     private Integer attendanceCount;
     private Double  averageRating;
     private Integer reviewCount;
+    private String endDate;
+    private String endTime;
+    private Integer totalTickets;
+
 }

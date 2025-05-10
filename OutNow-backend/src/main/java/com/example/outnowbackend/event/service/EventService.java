@@ -2,9 +2,12 @@ package com.example.outnowbackend.event.service;
 
 import com.example.outnowbackend.businessaccount.domain.BusinessAccount;
 import com.example.outnowbackend.businessaccount.repository.BusinessAccountRepo;
+import com.example.outnowbackend.config.PersonalizationProperties;
+import com.example.outnowbackend.event.ScoredEvent;
 import com.example.outnowbackend.event.domain.Event;
 import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.event.mapper.EventMapper;
+import com.example.outnowbackend.event.repository.EventAttendanceRepo;
 import com.example.outnowbackend.event.repository.EventRepo;
 import com.example.outnowbackend.notification.domain.NotificationType;
 import com.example.outnowbackend.notification.service.DeviceTokenService;
@@ -12,8 +15,6 @@ import com.example.outnowbackend.notification.service.NotificationService;
 import com.example.outnowbackend.notification.service.PushNotificationService;
 import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.repository.UserRepo;
-import com.example.outnowbackend.config.PersonalizationProperties;
-import com.example.outnowbackend.event.ScoredEvent;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -44,11 +45,12 @@ public class EventService {
     private final PersonalizationProperties personalizationProperties;
 
     @PersistenceContext
-    private EntityManager em;
+    private final EntityManager em;
+    private final EventAttendanceRepo attendanceRepo;
 
     @Transactional(readOnly = true)
     public long getAttendanceCount(Integer eventId) {
-        return userRepo.countAttendeesByEventId(eventId);
+        return attendanceRepo.countByEventId(eventId);
     }
 
     @Transactional(readOnly = true)
@@ -169,6 +171,16 @@ public class EventService {
         if (!existing.getInterestList().equals(updatedEvent.getInterestList())) {
             changes.append("Interests: ").append(updatedEvent.getInterestList()).append("\n");
         }
+        if (!existing.getEndDate().equals(updatedEvent.getEndDate())) {
+            changes.append("End Date: ").append(updatedEvent.getEndDate()).append("\n");
+        }
+        if (!existing.getEndTime().equals(updatedEvent.getEndTime())) {
+            changes.append("End Time: ").append(updatedEvent.getEndTime()).append("\n");
+        }
+        if (!existing.getTotalTickets().equals(updatedEvent.getTotalTickets())) {
+            changes.append("Total Tickets: ").append(updatedEvent.getTotalTickets()).append("\n");
+        }
+
 
         // remove trailing newline if present
         if (!changes.isEmpty() && changes.charAt(changes.length() - 1) == '\n') {
@@ -184,6 +196,9 @@ public class EventService {
         existing.setEventDate(updatedEvent.getEventDate());
         existing.setEventTime(updatedEvent.getEventTime());
         existing.setInterestList(updatedEvent.getInterestList());
+        existing.setEndDate(updatedEvent.getEndDate());
+        existing.setEndTime(updatedEvent.getEndTime());
+        existing.setTotalTickets(updatedEvent.getTotalTickets());
         Event saved = eventRepo.save(existing);
 
         System.out.println("[updateEvent] called for eventId={} with changes: {}" + eventId + changes);
@@ -325,8 +340,8 @@ public class EventService {
                 : Math.exp(-personalizationProperties.getDecayAlpha() * days);
 
         // raw popularity & rating (mapper already populated those)
-        se.popRaw     = Math.sqrt(dto.getFavoriteCount() + dto.getAttendanceCount());
-        se.ratingScore= dto.getAverageRating();
+        se.popRaw = Math.sqrt(dto.getFavoriteCount() + dto.getAttendanceCount());
+        se.ratingScore = dto.getAverageRating();
 
         return se;
     }
@@ -339,10 +354,10 @@ public class EventService {
 
     private void computeRawScore(ScoredEvent s) {
         var w = personalizationProperties.getWeights();
-        s.rawScore = w.getInterest()*s.interestScore
-                + w.getTime()*s.timeScore
-                + w.getPopularity()*s.popScore
-                + w.getRating()*s.ratingScore;
+        s.rawScore = w.getInterest() * s.interestScore
+                + w.getTime() * s.timeScore
+                + w.getPopularity() * s.popScore
+                + w.getRating() * s.ratingScore;
     }
 
     private List<ScoredEvent> diversify(List<ScoredEvent> scored) {
@@ -357,8 +372,8 @@ public class EventService {
         while (!R.isEmpty() && chosen.size() < 20) {
             ScoredEvent next = R.stream()
                     .max(Comparator.comparingDouble(s ->
-                            personalizationProperties.getMmrLambda()*s.rawScore
-                                    - (1 - personalizationProperties.getMmrLambda())*maxSim(s, chosen)
+                            personalizationProperties.getMmrLambda() * s.rawScore
+                                    - (1 - personalizationProperties.getMmrLambda()) * maxSim(s, chosen)
                     ))
                     .get();
             chosen.add(next);

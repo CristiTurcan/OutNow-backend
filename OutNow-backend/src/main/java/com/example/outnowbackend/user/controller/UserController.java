@@ -85,14 +85,18 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/going/{eventId}")
-    public ResponseEntity<?> addGoingEvent(@PathVariable Integer userId, @PathVariable Integer eventId) {
+    public ResponseEntity<?> addGoingEvent(
+            @PathVariable Integer userId,
+            @PathVariable Integer eventId,
+            @RequestParam(defaultValue = "1") Integer quantity) {
         try {
-            userService.addGoingEvent(userId, eventId);
+            userService.addGoingEvent(userId, eventId, quantity);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
 
     @DeleteMapping("/{userId}/going/{eventId}")
     public ResponseEntity<?> removeGoingEvent(@PathVariable Integer userId, @PathVariable Integer eventId) {

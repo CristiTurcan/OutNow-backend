@@ -77,6 +77,18 @@ public class Event {
     @IndexedEmbedded
     private BusinessAccount businessAccount;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
+    @Column(name = "end_time")
+    private LocalTime endTime;
+
+    @Column(name = "total_tickets")
+    private Integer totalTickets;
+
+
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EventAttendance> attendees = new ArrayList<>();
 }

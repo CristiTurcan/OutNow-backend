@@ -2,6 +2,7 @@ package com.example.outnowbackend.event.mapper;
 
 import com.example.outnowbackend.event.domain.Event;
 import com.example.outnowbackend.event.dto.EventDTO;
+import com.example.outnowbackend.event.repository.EventAttendanceRepo;
 import com.example.outnowbackend.feedback.domain.Feedback;
 import com.example.outnowbackend.feedback.repository.FeedbackRepo;
 import com.example.outnowbackend.user.repository.UserRepo;
@@ -20,6 +21,7 @@ public class EventMapper {
 
     private final FeedbackRepo feedbackRepo;
     private final UserRepo userRepo;
+    private final EventAttendanceRepo attendanceRepo;
 
     public EventDTO toDTO(Event event) {
         if (event == null) {
@@ -41,14 +43,21 @@ public class EventMapper {
         dto.setEventTime(event.getEventTime() != null
                 ? event.getEventTime().format(timeFormatter)
                 : null);
+        dto.setEndDate(   event.getEndDate().toString());
+        dto.setEndTime(   event.getEndTime().toString());
+        dto.setTotalTickets(event.getTotalTickets());
         dto.setInterestList(event.getInterestList());
 
         long favCount = userRepo.countByFavoritedEvents_EventId(event.getEventId());
         dto.setFavoriteCount((int) favCount);
 
         // Attendance count
-        long attendCount = userRepo.countAttendeesByEventId(event.getEventId());
-        dto.setAttendanceCount((int) attendCount);
+        // Attendance count (one row per ticket)
+        int attendCount = event.getAttendees() != null
+                ? event.getAttendees().size()
+                : 0;
+        dto.setAttendanceCount(attendCount);
+
 
         // Feedback list → reviewCount + averageRating
         List<Feedback> feedbacks = feedbackRepo.findByEvent(event);
