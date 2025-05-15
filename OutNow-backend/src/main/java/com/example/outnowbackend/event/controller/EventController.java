@@ -1,9 +1,12 @@
 package com.example.outnowbackend.event.controller;
 
-import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.event.domain.Event;
+import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.event.service.EventService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -85,8 +88,16 @@ public class EventController {
     }
 
     @GetMapping("/personalized")
-    public List<EventDTO> getPersonalizedForUser(
-            @RequestParam("userId") Integer userId) {
-        return eventService.getPersonalizedForUser(userId);
+    public Page<EventDTO> getPersonalizedForUser(
+            @RequestParam Integer userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        List<EventDTO> all = eventService.getPersonalizedForUser(userId);
+        int from = page * size;
+        int to = Math.min(from + size, all.size());
+        List<EventDTO> slice = from >= all.size() ? List.of() : all.subList(from, to);
+        return new PageImpl<>(slice, PageRequest.of(page, size), all.size());
     }
+
 }

@@ -8,9 +8,9 @@ import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.dto.UserDTO;
 import com.example.outnowbackend.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;

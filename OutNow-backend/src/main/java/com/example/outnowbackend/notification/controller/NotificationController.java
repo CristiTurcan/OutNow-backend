@@ -1,6 +1,5 @@
 package com.example.outnowbackend.notification.controller;
 
-import com.example.outnowbackend.notification.domain.Notification;
 import com.example.outnowbackend.notification.dto.NotificationDTO;
 import com.example.outnowbackend.notification.mapper.NotificationMapper;
 import com.example.outnowbackend.notification.service.NotificationService;

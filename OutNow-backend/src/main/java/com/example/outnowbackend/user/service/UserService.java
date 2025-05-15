@@ -96,7 +96,7 @@ public class UserService {
 
     @Transactional
     public void addGoingEvent(Integer userId, Integer eventId, Integer quantity) {
-        User  user  = userRepo.findById(userId)
+        User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Event event = eventRepo.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
@@ -118,7 +118,6 @@ public class UserService {
             userRepo.save(user);
         }
     }
-
 
 
     @Transactional

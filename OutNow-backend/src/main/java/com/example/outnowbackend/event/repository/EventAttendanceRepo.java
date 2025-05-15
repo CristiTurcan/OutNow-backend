@@ -1,7 +1,7 @@
 package com.example.outnowbackend.event.repository;
 
-import com.example.outnowbackend.event.domain.EventAttendance;
 import com.example.outnowbackend.event.domain.Event;
+import com.example.outnowbackend.event.domain.EventAttendance;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

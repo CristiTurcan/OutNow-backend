@@ -20,7 +20,7 @@ public class EventDTO {
     private String interestList;
     private Integer favoriteCount;
     private Integer attendanceCount;
-    private Double  averageRating;
+    private Double averageRating;
     private Integer reviewCount;
     private String endDate;
     private String endTime;

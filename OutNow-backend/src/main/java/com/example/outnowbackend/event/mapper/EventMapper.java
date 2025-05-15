@@ -43,8 +43,8 @@ public class EventMapper {
         dto.setEventTime(event.getEventTime() != null
                 ? event.getEventTime().format(timeFormatter)
                 : null);
-        dto.setEndDate(   event.getEndDate().toString());
-        dto.setEndTime(   event.getEndTime().toString());
+        dto.setEndDate(event.getEndDate().toString());
+        dto.setEndTime(event.getEndTime().toString());
         dto.setTotalTickets(event.getTotalTickets());
         dto.setInterestList(event.getInterestList());
 

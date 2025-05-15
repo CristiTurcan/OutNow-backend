@@ -1,12 +1,12 @@
 package com.example.outnowbackend.feedback.service;
 
+import com.example.outnowbackend.event.domain.Event;
+import com.example.outnowbackend.event.repository.EventRepo;
 import com.example.outnowbackend.feedback.domain.Feedback;
 import com.example.outnowbackend.feedback.domain.Rating;
 import com.example.outnowbackend.feedback.dto.FeedbackDTO;
 import com.example.outnowbackend.feedback.mapper.FeedbackMapper;
 import com.example.outnowbackend.feedback.repository.FeedbackRepo;
-import com.example.outnowbackend.event.domain.Event;
-import com.example.outnowbackend.event.repository.EventRepo;
 import com.example.outnowbackend.notification.domain.NotificationType;
 import com.example.outnowbackend.notification.service.DeviceTokenService;
 import com.example.outnowbackend.notification.service.NotificationService;

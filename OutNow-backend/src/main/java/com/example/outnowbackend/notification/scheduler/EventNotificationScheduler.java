@@ -1,34 +1,38 @@
 package com.example.outnowbackend.notification.scheduler;
 
 import com.example.outnowbackend.event.domain.Event;
-import com.example.outnowbackend.event.service.EventService;
+import com.example.outnowbackend.event.repository.EventRepo;
+import com.example.outnowbackend.feedback.repository.FeedbackRepo;
 import com.example.outnowbackend.notification.domain.NotificationType;
 import com.example.outnowbackend.notification.service.DeviceTokenService;
 import com.example.outnowbackend.notification.service.NotificationService;
 import com.example.outnowbackend.notification.service.PushNotificationService;
-import com.example.outnowbackend.event.repository.EventRepo;
-import com.example.outnowbackend.feedback.repository.FeedbackRepo;
 import com.example.outnowbackend.user.repository.UserRepo;
 import jakarta.transaction.Transactional;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
 public class EventNotificationScheduler {
 
+    private static final Logger log = LoggerFactory.getLogger(EventNotificationScheduler.class);
     private final EventRepo eventRepo;
     private final PushNotificationService push;
     private final DeviceTokenService tokens;
     private final FeedbackRepo feedbackRepo;
     private final NotificationService notificationService;
     private final UserRepo userRepo;
-    private static final Logger log = LoggerFactory.getLogger(EventNotificationScheduler.class);
 
 
     public EventNotificationScheduler(
@@ -98,7 +102,7 @@ public class EventNotificationScheduler {
     public void feedbackInvites() {
 //        log.info("✉️ feedbackInvites() triggered at {}", LocalDateTime.now());
         LocalDateTime rawTarget = LocalDateTime.now().minusHours(1);
-        LocalDateTime target    = rawTarget.truncatedTo(ChronoUnit.MINUTES);
+        LocalDateTime target = rawTarget.truncatedTo(ChronoUnit.MINUTES);
 //        log.info("   looking for events at exact time {}", target);
 
         List<Event> events = eventRepo.findByEventDateAndEventTime(

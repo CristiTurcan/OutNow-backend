@@ -29,6 +29,7 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -368,19 +369,25 @@ public class EventService {
 
         List<ScoredEvent> chosen = new ArrayList<>();
         if (!R.isEmpty()) chosen.add(R.remove(0));
-
-        while (!R.isEmpty() && chosen.size() < 20) {
+        while (!R.isEmpty()) {
             ScoredEvent next = R.stream()
                     .max(Comparator.comparingDouble(s ->
                             personalizationProperties.getMmrLambda() * s.rawScore
                                     - (1 - personalizationProperties.getMmrLambda()) * maxSim(s, chosen)
-                    ))
-                    .get();
+                    )).get();
             chosen.add(next);
             R.remove(next);
         }
-        return chosen;
+
+        List<ScoredEvent> rest = scored.stream()
+                .sorted(Comparator.comparingDouble((ScoredEvent s) -> s.rawScore).reversed())
+                .skip(R.size())
+                .collect(Collectors.toList());
+
+        return Stream.concat(chosen.stream(), rest.stream())
+                .collect(Collectors.toList());
     }
+
 
     private double maxSim(ScoredEvent s, List<ScoredEvent> chosen) {
         return chosen.stream()
