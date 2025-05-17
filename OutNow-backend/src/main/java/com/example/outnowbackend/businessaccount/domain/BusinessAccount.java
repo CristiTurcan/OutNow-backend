@@ -43,6 +43,12 @@ public class BusinessAccount {
     @Column(name = "interest_list")
     private String interestList;
 
+    @Column(nullable = true)
+    private Double latitude;
+
+    @Column(nullable = true)
+    private Double longitude;
+
     // Relationship: each business account creates many events
     @OneToMany(mappedBy = "businessAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Event> createdEvents;

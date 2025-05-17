@@ -47,11 +47,12 @@ public class EventMapper {
         dto.setEndTime(event.getEndTime().toString());
         dto.setTotalTickets(event.getTotalTickets());
         dto.setInterestList(event.getInterestList());
+        dto.setLatitude(event.getLatitude());
+        dto.setLongitude(event.getLongitude());
 
         long favCount = userRepo.countByFavoritedEvents_EventId(event.getEventId());
         dto.setFavoriteCount((int) favCount);
 
-        // Attendance count
         // Attendance count (one row per ticket)
         int attendCount = event.getAttendees() != null
                 ? event.getAttendees().size()

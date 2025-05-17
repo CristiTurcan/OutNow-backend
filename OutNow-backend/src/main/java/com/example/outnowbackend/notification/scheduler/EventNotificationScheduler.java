@@ -55,7 +55,7 @@ public class EventNotificationScheduler {
     @Scheduled(cron = "0 * * * * *")
     @Transactional
     public void reminderJobs() {
-//        log.info("🔔 reminderJobs() triggered at {}", LocalDateTime.now());
+//        log.info("reminderJobs() triggered at {}", LocalDateTime.now());
         LocalDateTime now = LocalDateTime.now();
         scheduleReminder(now.plusHours(24), "starts in 24 hours");
         scheduleReminder(now.plusHours(1), "starts in 1 hour");
@@ -66,7 +66,7 @@ public class EventNotificationScheduler {
         LocalDate date = truncated.toLocalDate();
         LocalTime time = truncated.toLocalTime();
 
-//        log.info("→ scheduleReminder(target={}, when='{}')", target, when);
+//        log.info("scheduleReminder(target={}, when='{}')", target, when);
         List<Event> events = eventRepo
                 .findByEventDateAndEventTime(date, time);
 //        log.info("   found {} event(s) for {} reminder", events.size(), when);
@@ -100,7 +100,7 @@ public class EventNotificationScheduler {
     @Scheduled(cron = "30 * * * * *")
     @Transactional
     public void feedbackInvites() {
-//        log.info("✉️ feedbackInvites() triggered at {}", LocalDateTime.now());
+//        log.info("feedbackInvites() triggered at {}", LocalDateTime.now());
         LocalDateTime rawTarget = LocalDateTime.now().minusHours(1);
         LocalDateTime target = rawTarget.truncatedTo(ChronoUnit.MINUTES);
 //        log.info("   looking for events at exact time {}", target);

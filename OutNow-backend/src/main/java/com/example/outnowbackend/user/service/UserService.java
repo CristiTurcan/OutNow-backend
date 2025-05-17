@@ -220,6 +220,12 @@ public class UserService {
         if (user.getShowLocation() != null) {
             existingUser.setShowLocation(user.getShowLocation());
         }
+        if (user.getLatitude() != null) {
+            existingUser.setLatitude(user.getLatitude());
+        }
+        if (user.getLongitude() != null) {
+            existingUser.setLongitude(user.getLongitude());
+        }
         if (user.getShowGender() != null) {
             existingUser.setShowGender(user.getShowGender());
         }

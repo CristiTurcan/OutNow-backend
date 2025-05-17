@@ -88,6 +88,11 @@ public class Event {
     @Column(name = "total_tickets")
     private Integer totalTickets;
 
+    @Column(nullable = true)
+    private Double latitude;
+
+    @Column(nullable = true)
+    private Double longitude;
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EventAttendance> attendees = new ArrayList<>();

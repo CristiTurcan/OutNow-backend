@@ -70,6 +70,12 @@ public class BusinessAccountService {
         if (businessAccount.getLocation() != null) {
             existingAccount.setLocation(businessAccount.getLocation());
         }
+        if (businessAccount.getLatitude() != null) {
+            existingAccount.setLatitude(businessAccount.getLatitude());
+        }
+        if (businessAccount.getLongitude() != null) {
+            existingAccount.setLongitude(businessAccount.getLongitude());
+        }
         if (businessAccount.getInterestList() != null) {
             existingAccount.setInterestList(businessAccount.getInterestList());
         }
@@ -93,6 +99,12 @@ public class BusinessAccountService {
         }
         if (businessAccountUpdates.getLocation() != null) {
             existingAccount.setLocation(businessAccountUpdates.getLocation());
+        }
+        if (businessAccountUpdates.getLatitude() != null) {
+            existingAccount.setLatitude(businessAccountUpdates.getLatitude());
+        }
+        if (businessAccountUpdates.getLongitude() != null) {
+            existingAccount.setLongitude(businessAccountUpdates.getLongitude());
         }
         if (businessAccountUpdates.getInterestList() != null) {
             existingAccount.setInterestList(businessAccountUpdates.getInterestList());

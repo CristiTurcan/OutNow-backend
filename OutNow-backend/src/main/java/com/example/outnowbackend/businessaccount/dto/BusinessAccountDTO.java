@@ -12,5 +12,6 @@ public class BusinessAccountDTO {
     private String location;
     private String interestList;
     private Long followerCount;
-
+    private Double latitude;
+    private Double longitude;
 }

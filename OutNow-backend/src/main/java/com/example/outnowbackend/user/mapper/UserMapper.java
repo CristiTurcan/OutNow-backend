@@ -47,6 +47,8 @@ public class UserMapper {
         dto.setShowLocation(user.getShowLocation());
         dto.setShowGender(user.getShowGender());
         dto.setShowInterests(user.getShowInterests());
+        dto.setLatitude(user.getLatitude());
+        dto.setLongitude(user.getLongitude());
         return dto;
     }
 
@@ -78,6 +80,8 @@ public class UserMapper {
         user.setShowLocation(dto.getShowLocation());
         user.setShowGender(dto.getShowGender());
         user.setShowInterests(dto.getShowInterests());
+        user.setLongitude(dto.getLongitude());
+        user.setLatitude(dto.getLatitude());
         return user;
     }
 }

@@ -25,5 +25,6 @@ public class EventDTO {
     private String endDate;
     private String endTime;
     private Integer totalTickets;
-
+    private Double latitude;
+    private Double longitude;
 }

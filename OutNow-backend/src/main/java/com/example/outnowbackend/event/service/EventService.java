@@ -20,11 +20,14 @@ import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -35,6 +38,8 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class EventService {
 
+    private static final Logger log = LoggerFactory.getLogger(EventService.class);
+    private static final int LOG_TOP_N = 20;
     private final EventRepo eventRepo;
     private final BusinessAccountRepo businessAccountRepo;
     private final EventMapper eventMapper;
@@ -44,10 +49,20 @@ public class EventService {
     private final NotificationService notificationService;
     private final SimpMessagingTemplate messagingTemplate;
     private final PersonalizationProperties personalizationProperties;
-
     @PersistenceContext
     private final EntityManager em;
     private final EventAttendanceRepo attendanceRepo;
+
+    private static double haversine(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6_371; // Earth radius in km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
 
     @Transactional(readOnly = true)
     public long getAttendanceCount(Integer eventId) {
@@ -131,7 +146,6 @@ public class EventService {
                 .map(eventMapper::toDTO);
     }
 
-
     @Transactional
     public List<EventDTO> getEventsByBusinessAccount(Integer businessAccountId) {
         return eventRepo.findByBusinessAccount_Id(businessAccountId)
@@ -182,7 +196,6 @@ public class EventService {
             changes.append("Total Tickets: ").append(updatedEvent.getTotalTickets()).append("\n");
         }
 
-
         // remove trailing newline if present
         if (!changes.isEmpty() && changes.charAt(changes.length() - 1) == '\n') {
             changes.deleteCharAt(changes.length() - 1);
@@ -200,6 +213,8 @@ public class EventService {
         existing.setEndDate(updatedEvent.getEndDate());
         existing.setEndTime(updatedEvent.getEndTime());
         existing.setTotalTickets(updatedEvent.getTotalTickets());
+        existing.setLatitude(updatedEvent.getLatitude());
+        existing.setLongitude(updatedEvent.getLongitude());
         Event saved = eventRepo.save(existing);
 
         System.out.println("[updateEvent] called for eventId={} with changes: {}" + eventId + changes);
@@ -279,7 +294,6 @@ public class EventService {
                 .toList();
     }
 
-
     @Transactional
     public void deleteEvent(Integer eventId) {
         Event toCancel = eventRepo.findById(eventId)
@@ -313,44 +327,141 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public List<EventDTO> getPersonalizedForUser(Integer userId) {
+        System.out.println("getPersonalizedForUser\n");
         User user = userRepo.findById(userId).orElseThrow();
         List<ScoredEvent> scored = eventRepo
                 .findUpcoming(LocalDate.now(), LocalTime.now())
                 .stream()
                 .map(eventMapper::toDTO)
-                .map(dto -> computeFeatures(dto, user.getInterestList()))
+                .map(dto -> computeFeatures(dto,
+                        user.getInterestList(),
+                        user.getLatitude(),
+                        user.getLongitude()))
                 .collect(Collectors.toList());
+        if (log.isDebugEnabled()) {
+            for (ScoredEvent se : scored.stream().limit(LOG_TOP_N).toList()) {
+                // recompute daysUntil
+                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime eventAt = LocalDateTime.of(
+                        LocalDate.parse(se.getEvent().getEventDate()),
+                        LocalTime.parse(se.getEvent().getEventTime())
+                );
+                double daysUntil = ChronoUnit.MINUTES.between(now, eventAt) / 60.0 / 24.0;
+                // recompute timeScore
+                double decayAlpha = personalizationProperties.getDecayAlpha();
+                double timeScore = daysUntil <= 0
+                        ? 0.0
+                        : Math.exp(-decayAlpha * daysUntil);
+                // recompute locationScore
+                Double dtoLat = se.getEvent().getLatitude();
+                Double dtoLng = se.getEvent().getLongitude();
+                double locScore = (dtoLat != null && dtoLng != null)
+                        ? Math.exp(-personalizationProperties.getProximityDecayAlpha()
+                        * haversine(user.getLatitude(), user.getLongitude(),
+                        dtoLat, dtoLng))
+                        : 0.0;
+                log.debug(
+                        "DEBUG[{}] EID={}  daysUntil={}  timeScore={}  locationScore={}",
+                        LOG_TOP_N,
+                        se.getEvent().getEventId(),
+                        String.format("%.3f", daysUntil),
+                        String.format("%.3f", timeScore),
+                        String.format("%.3f", locScore)
+                );
+            }
+        }
+
         normalizePopularity(scored);
         scored.forEach(this::computeRawScore);
-        return diversify(scored).stream()
+
+        double mmrLambda = personalizationProperties.getMmrLambda();
+
+        List<ScoredEvent> topN = scored.stream()
+                .sorted(Comparator.comparingDouble(ScoredEvent::getRawScore).reversed())
+                .limit(LOG_TOP_N)
+                .collect(Collectors.toList());
+
+        long perfect = topN.stream()
+                .filter(s -> s.getInterestScore() == 1.0)
+                .count();
+        double fraction = (double) perfect / LOG_TOP_N;
+
+        if (fraction >= personalizationProperties.getDynamicMmrTriggerFraction()) {
+            mmrLambda += personalizationProperties.getDynamicMmrBoost();
+        }
+
+        List<ScoredEvent> diversified = diversify(scored, mmrLambda);
+
+        // ─── DEBUG LOG the top N component scores ───
+        diversified.stream()
+                .limit(LOG_TOP_N)
+                .forEach(se -> {
+                    double eventLat = se.getEvent().getLatitude();
+                    double eventLng = se.getEvent().getLongitude();
+                    double userLat = user.getLatitude();
+                    double userLng = user.getLongitude();
+                    double distanceKm = haversine(userLat, userLng, eventLat, eventLng);
+
+                    log.debug(
+                            "UID={}  EID={}  coords={{user:{},{} event:{},{}}}  dist={}km  scores={{interest:{}, time:{}, pop:{}, rating:{}, location:{}, raw:{}}}",
+                            userId,
+                            se.getEvent().getEventId(),
+                            userLat, userLng,
+                            eventLat, eventLng,
+                            String.format("%.2f", distanceKm),
+                            String.format("%.3f", se.interestScore),
+                            String.format("%.3f", se.timeScore),
+                            String.format("%.3f", se.popScore),
+                            String.format("%.3f", se.ratingScore),
+                            String.format("%.3f", se.locationScore),
+                            String.format("%.3f", se.rawScore)
+                    );
+                });
+
+
+        return diversify(scored, mmrLambda).stream()
                 .map(ScoredEvent::getEvent)
                 .collect(Collectors.toList());
     }
 
-    private ScoredEvent computeFeatures(EventDTO dto, String userInterests) {
+    private ScoredEvent computeFeatures(EventDTO dto, String userInterests, double userLat, double userLng) {
         ScoredEvent se = new ScoredEvent(dto);
 
         // interest match
         se.interestScore = jaccard(userInterests, dto.getInterestList());
 
         // time decay
-        LocalDate eventDate = LocalDate.parse(dto.getEventDate());
-        long days = ChronoUnit.DAYS.between(LocalDate.now(), eventDate);
-        se.timeScore = days < 0
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime eventAt = LocalDateTime.of(
+                LocalDate.parse(dto.getEventDate()),
+                LocalTime.parse(dto.getEventTime())
+        );
+        double daysUntil = ChronoUnit.MINUTES.between(now, eventAt) / 60.0 / 24.0;
+        se.timeScore = daysUntil <= 0
                 ? 0.0
-                : Math.exp(-personalizationProperties.getDecayAlpha() * days);
+                : Math.exp(-personalizationProperties.getDecayAlpha() * daysUntil);
 
-        // raw popularity & rating (mapper already populated those)
+        // raw popularity & rating
         se.popRaw = Math.sqrt(dto.getFavoriteCount() + dto.getAttendanceCount());
         se.ratingScore = dto.getAverageRating();
+        Double dtoLat = dto.getLatitude();
+        Double dtoLng = dto.getLongitude();
+        if (dtoLat != null && dtoLng != null) {
+            double distanceKm = haversine(userLat, userLng, dtoLat, dtoLng);
+            se.locationScore = Math.exp(-personalizationProperties.getLocation() * distanceKm);
+        } else {
+            se.locationScore = 0.0;
+        }
+
 
         return se;
     }
 
     private void normalizePopularity(List<ScoredEvent> list) {
-        double min = list.stream().mapToDouble(s -> s.popRaw).min().orElse(0);
-        double max = list.stream().mapToDouble(s -> s.popRaw).max().orElse(1);
-        list.forEach(s -> s.popScore = (s.popRaw - min) / (max - min));
+        list.forEach(s -> {
+            double raw = s.popRaw;
+            s.popScore = raw / (1 + raw);
+        });
     }
 
     private void computeRawScore(ScoredEvent s) {
@@ -358,10 +469,11 @@ public class EventService {
         s.rawScore = w.getInterest() * s.interestScore
                 + w.getTime() * s.timeScore
                 + w.getPopularity() * s.popScore
-                + w.getRating() * s.ratingScore;
+                + w.getRating() * s.ratingScore
+                + personalizationProperties.getLocation() * s.locationScore;
     }
 
-    private List<ScoredEvent> diversify(List<ScoredEvent> scored) {
+    private List<ScoredEvent> diversify(List<ScoredEvent> scored, double mmrLambda) {
         List<ScoredEvent> R = scored.stream()
                 .sorted(Comparator.comparingDouble((ScoredEvent s) -> s.rawScore).reversed())
                 .limit(50)
@@ -372,9 +484,10 @@ public class EventService {
         while (!R.isEmpty()) {
             ScoredEvent next = R.stream()
                     .max(Comparator.comparingDouble(s ->
-                            personalizationProperties.getMmrLambda() * s.rawScore
-                                    - (1 - personalizationProperties.getMmrLambda()) * maxSim(s, chosen)
-                    )).get();
+                            mmrLambda * s.rawScore
+                                    - (1 - mmrLambda) * maxSim(s, chosen)
+                    ))
+                    .get();
             chosen.add(next);
             R.remove(next);
         }
@@ -388,7 +501,6 @@ public class EventService {
                 .collect(Collectors.toList());
     }
 
-
     private double maxSim(ScoredEvent s, List<ScoredEvent> chosen) {
         return chosen.stream()
                 .mapToDouble(c -> jaccard(s.getEvent().getInterestList(), c.getEvent().getInterestList()))
@@ -396,11 +508,24 @@ public class EventService {
     }
 
     private double jaccard(String a, String b) {
-        var setA = Set.of(a.split(","));
-        var setB = Set.of(b.split(","));
+        if (a == null || b == null || a.isBlank() || b.isBlank()) {
+            return 0.0;
+        }
+        Set<String> setA = Arrays.stream(a.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+        Set<String> setB = Arrays.stream(b.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+        if (setA.isEmpty() || setB.isEmpty()) {
+            return 0.0;
+        }
         long inter = setA.stream().filter(setB::contains).count();
         long union = setA.size() + setB.size() - inter;
-        return union == 0 ? 0.0 : (double) inter / union;
+        return (double) inter / union;
     }
+
 
 }

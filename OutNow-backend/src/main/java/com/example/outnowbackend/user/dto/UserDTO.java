@@ -21,6 +21,8 @@ public class UserDTO {
     private Boolean showLocation;
     private Boolean showGender;
     private Boolean showInterests;
+    private Double latitude;
+    private Double longitude;
 
     @JsonProperty("showDob")
     public Boolean getShowDob() {

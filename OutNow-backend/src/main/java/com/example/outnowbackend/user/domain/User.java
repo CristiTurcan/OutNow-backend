@@ -61,6 +61,12 @@ public class User {
     @Column(name = "show_interests", nullable = false)
     private Boolean showInterests = true;
 
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
 
     // Relationship to store favorited events
     @ManyToMany

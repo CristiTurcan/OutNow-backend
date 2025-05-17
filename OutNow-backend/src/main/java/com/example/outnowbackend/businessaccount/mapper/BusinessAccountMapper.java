@@ -19,6 +19,8 @@ public class BusinessAccountMapper {
         dto.setBio(account.getBio());
         dto.setLocation(account.getLocation());
         dto.setInterestList(account.getInterestList());
+        dto.setLatitude(account.getLatitude());
+        dto.setLongitude(account.getLongitude());
         return dto;
     }
 
@@ -34,6 +36,8 @@ public class BusinessAccountMapper {
         account.setBio(dto.getBio());
         account.setLocation(dto.getLocation());
         account.setInterestList(dto.getInterestList());
+        account.setLatitude(dto.getLatitude());
+        account.setLongitude(dto.getLongitude());
         return account;
     }
 }
