@@ -90,10 +90,11 @@ public class EventController {
     @GetMapping("/personalized")
     public Page<EventDTO> getPersonalizedForUser(
             @RequestParam Integer userId,
+            @RequestParam boolean isBusiness,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        List<EventDTO> all = eventService.getPersonalizedForUser(userId);
+        List<EventDTO> all = eventService.getPersonalizedForUser(userId, isBusiness);
         int from = page * size;
         int to = Math.min(from + size, all.size());
         List<EventDTO> slice = from >= all.size() ? List.of() : all.subList(from, to);

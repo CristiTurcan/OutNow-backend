@@ -8,9 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping("/business-accounts")
@@ -21,6 +19,18 @@ public class BusinessAccountController {
     @Autowired
     public BusinessAccountController(BusinessAccountService businessAccountService) {
         this.businessAccountService = businessAccountService;
+    }
+
+    @GetMapping("/check-username")
+    public ResponseEntity<Map<String, Boolean>> checkUsername(@RequestParam String username) {
+        boolean taken = businessAccountService.usernameExists(username);
+        return ResponseEntity.ok(Collections.singletonMap("available", !taken));
+    }
+
+    @GetMapping("/check-email")
+    public ResponseEntity<Map<String, Boolean>> checkEmail(@RequestParam String email) {
+        boolean taken = businessAccountService.emailExists(email);
+        return ResponseEntity.ok(Collections.singletonMap("available", !taken));
     }
 
     @PostMapping

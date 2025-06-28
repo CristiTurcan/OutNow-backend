@@ -31,7 +31,7 @@ repositories {
 
 
 dependencies {
-
+    implementation 'org.postgresql:postgresql:42.7.1'
     implementation platform("org.springframework.boot:spring-boot-dependencies:3.4.1")
     implementation platform("org.hibernate.search:hibernate-search-bom:7.2.3.Final")
     implementation 'org.hibernate.search:hibernate-search-mapper-orm'
@@ -47,7 +47,7 @@ dependencies {
     implementation 'org.modelmapper:modelmapper:3.2.1'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.0'
     compileOnly 'org.projectlombok:lombok'
-    runtimeOnly 'org.postgresql:postgresql'
+//    runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

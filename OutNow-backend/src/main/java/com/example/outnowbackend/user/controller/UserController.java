@@ -4,6 +4,7 @@ import com.example.outnowbackend.businessaccount.dto.BusinessAccountDTO;
 import com.example.outnowbackend.event.dto.EventDTO;
 import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.dto.UserDTO;
+import com.example.outnowbackend.user.dto.UserEventsDTO;
 import com.example.outnowbackend.user.service.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -21,6 +24,19 @@ public class UserController {
 
     private final ObjectMapper objectMapper;
     private final UserService userService;
+
+    @GetMapping("/check-username")
+    public ResponseEntity<Map<String, Boolean>> checkUsername(@RequestParam String username) {
+        boolean taken = userService.usernameExists(username);
+        return ResponseEntity.ok(Collections.singletonMap("available", !taken));
+    }
+
+    @GetMapping("/check-email")
+    public ResponseEntity<Map<String, Boolean>> checkEmail(@RequestParam String email) {
+        boolean exists = userService.getUserIdByEmail(email) != null;
+        return ResponseEntity.ok(Collections.singletonMap("available", !exists));
+    }
+
 
     @GetMapping("/id-by-email")
     public ResponseEntity<Integer> getUserIdByEmail(@RequestParam String email) {
@@ -119,6 +135,14 @@ public class UserController {
         Set<EventDTO> going = userService.getUserGoingEvents(userId);
         return ResponseEntity.ok(going);
     }
+
+    @GetMapping("/{userId}/events")
+    public ResponseEntity<UserEventsDTO> getUserEvents(@PathVariable Integer userId) {
+        Set<EventDTO> favorites = userService.getUserFavorites(userId);
+        Set<EventDTO> going = userService.getUserGoingEvents(userId);
+        return ResponseEntity.ok(new UserEventsDTO(favorites, going));
+    }
+
 
     @PostMapping("/{userId}/follow/{businessAccountId}")
     public ResponseEntity<?> followBusinessAccount(

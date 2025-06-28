@@ -24,6 +24,14 @@ public class BusinessAccountService {
     private final BusinessAccountMapper businessAccountMapper;
     private final UserMapper userMapper;
 
+    public boolean usernameExists(String username) {
+        return businessAccountRepository.existsByUsername(username);
+    }
+
+    public boolean emailExists(String email) {
+        return businessAccountRepository.findByEmail(email).isPresent();
+    }
+
     public BusinessAccountDTO createBusinessAccount(BusinessAccount businessAccount) {
         BusinessAccount created = businessAccountRepository.save(businessAccount);
         return businessAccountMapper.toDTO(created);

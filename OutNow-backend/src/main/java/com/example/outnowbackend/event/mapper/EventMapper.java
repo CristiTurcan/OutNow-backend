@@ -53,14 +53,11 @@ public class EventMapper {
         long favCount = userRepo.countByFavoritedEvents_EventId(event.getEventId());
         dto.setFavoriteCount((int) favCount);
 
-        // Attendance count (one row per ticket)
         int attendCount = event.getAttendees() != null
                 ? event.getAttendees().size()
                 : 0;
         dto.setAttendanceCount(attendCount);
 
-
-        // Feedback list → reviewCount + averageRating
         List<Feedback> feedbacks = feedbackRepo.findByEvent(event);
         dto.setReviewCount(feedbacks.size());
         double avg = feedbacks.stream()

@@ -96,7 +96,7 @@ public class EventNotificationScheduler {
         }
     }
 
-    // Run once a minute to catch feedback invites ~1h after start
+    // Run once a minute to catch feedback invites 1h after start
     @Scheduled(cron = "30 * * * * *")
     @Transactional
     public void feedbackInvites() {

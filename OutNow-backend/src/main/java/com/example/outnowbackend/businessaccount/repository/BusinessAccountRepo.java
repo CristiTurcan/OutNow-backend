@@ -12,6 +12,8 @@ import java.util.Optional;
 public interface BusinessAccountRepo extends JpaRepository<BusinessAccount, Integer> {
     Optional<BusinessAccount> findByEmail(String email);
 
+    boolean existsByUsername(String username);
+
     @Query("SELECT COUNT(u) FROM User u JOIN u.followedAccounts ba WHERE ba.id = :businessAccountId")
     long countFollowersByBusinessAccountId(@Param("businessAccountId") Integer businessAccountId);
 }

@@ -16,6 +16,7 @@ import com.example.outnowbackend.notification.service.PushNotificationService;
 import com.example.outnowbackend.user.domain.User;
 import com.example.outnowbackend.user.repository.UserRepo;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.search.mapper.orm.Search;
@@ -159,7 +160,6 @@ public class EventService {
         Event existing = eventRepo.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
-        // detect changes across every field
         StringBuilder changes = new StringBuilder();
 
         if (!existing.getTitle().equals(updatedEvent.getTitle())) {
@@ -196,7 +196,7 @@ public class EventService {
             changes.append("Total Tickets: ").append(updatedEvent.getTotalTickets()).append("\n");
         }
 
-        // remove trailing newline if present
+        // remove newline if present
         if (!changes.isEmpty() && changes.charAt(changes.length() - 1) == '\n') {
             changes.deleteCharAt(changes.length() - 1);
         }
@@ -321,23 +321,39 @@ public class EventService {
             );
         }
 
+        userRepo.deleteGoingByEventId(eventId);
+        attendanceRepo.deleteByEventId(eventId);
+
         eventRepo.deleteById(eventId);
         messagingTemplate.convertAndSend("/topic/eventDeleted", eventId);
     }
 
     @Transactional(readOnly = true)
-    public List<EventDTO> getPersonalizedForUser(Integer userId) {
+    public List<EventDTO> getPersonalizedForUser(Integer userId, boolean isBusiness) {
         System.out.println("getPersonalizedForUser\n");
-        User user = userRepo.findById(userId).orElseThrow();
+
+        System.out.println("userId: " + userId + "business:" + isBusiness);
+
+        BusinessAccount businessAccount = isBusiness ? businessAccountRepo.findById(userId).orElseThrow(() -> new EntityNotFoundException("Business Account not found: " + userId)) : null;
+        User user = !isBusiness ? userRepo.findById(userId).orElseThrow(() -> new EntityNotFoundException("User Account not found: " + userId)) : null;
+
         List<ScoredEvent> scored = eventRepo
                 .findUpcoming(LocalDate.now(), LocalTime.now())
                 .stream()
                 .map(eventMapper::toDTO)
                 .map(dto -> computeFeatures(dto,
-                        user.getInterestList(),
-                        user.getLatitude(),
-                        user.getLongitude()))
+                        isBusiness
+                                ? businessAccount.getInterestList()
+                                : user.getInterestList(),
+                        isBusiness
+                                ? businessAccount.getLatitude()
+                                : user.getLatitude(),
+                        isBusiness
+                                ? businessAccount.getLongitude()
+                                : user.getLongitude()
+                ))
                 .collect(Collectors.toList());
+
         if (log.isDebugEnabled()) {
             for (ScoredEvent se : scored.stream().limit(LOG_TOP_N).toList()) {
                 // recompute daysUntil
@@ -357,7 +373,7 @@ public class EventService {
                 Double dtoLng = se.getEvent().getLongitude();
                 double locScore = (dtoLat != null && dtoLng != null)
                         ? Math.exp(-personalizationProperties.getProximityDecayAlpha()
-                        * haversine(user.getLatitude(), user.getLongitude(),
+                        * haversine(!isBusiness ? user.getLatitude() : businessAccount.getLatitude(), !isBusiness ? user.getLongitude() : businessAccount.getLongitude(),
                         dtoLat, dtoLng))
                         : 0.0;
                 log.debug(
@@ -373,23 +389,18 @@ public class EventService {
 
         normalizePopularity(scored);
         scored.forEach(this::computeRawScore);
-
         double mmrLambda = personalizationProperties.getMmrLambda();
-
         List<ScoredEvent> topN = scored.stream()
                 .sorted(Comparator.comparingDouble(ScoredEvent::getRawScore).reversed())
                 .limit(LOG_TOP_N)
                 .collect(Collectors.toList());
-
         long perfect = topN.stream()
                 .filter(s -> s.getInterestScore() == 1.0)
                 .count();
         double fraction = (double) perfect / LOG_TOP_N;
-
         if (fraction >= personalizationProperties.getDynamicMmrTriggerFraction()) {
             mmrLambda += personalizationProperties.getDynamicMmrBoost();
         }
-
         List<ScoredEvent> diversified = diversify(scored, mmrLambda);
 
         // ─── DEBUG LOG the top N component scores ───
@@ -398,16 +409,17 @@ public class EventService {
                 .forEach(se -> {
                     double eventLat = se.getEvent().getLatitude();
                     double eventLng = se.getEvent().getLongitude();
-                    double userLat = user.getLatitude();
-                    double userLng = user.getLongitude();
+                    double userLat = !isBusiness ? user.getLatitude() : businessAccount.getLatitude();
+                    double userLng = !isBusiness ? user.getLongitude() : businessAccount.getLongitude();
                     double distanceKm = haversine(userLat, userLng, eventLat, eventLng);
 
                     log.debug(
-                            "UID={}  EID={}  coords={{user:{},{} event:{},{}}}  dist={}km  scores={{interest:{}, time:{}, pop:{}, rating:{}, location:{}, raw:{}}}",
+                            "UID={}  EID={}  E_TITLE={} coords={{  dist={}km  scores={{interest:{}, time:{}, pop:{}, rating:{}, location:{}, raw:{}}}",
                             userId,
                             se.getEvent().getEventId(),
-                            userLat, userLng,
-                            eventLat, eventLng,
+                            se.getEvent().getTitle(),
+//                            userLat, userLng,
+//                            eventLat, eventLng,
                             String.format("%.2f", distanceKm),
                             String.format("%.3f", se.interestScore),
                             String.format("%.3f", se.timeScore),
@@ -452,8 +464,6 @@ public class EventService {
         } else {
             se.locationScore = 0.0;
         }
-
-
         return se;
     }
 

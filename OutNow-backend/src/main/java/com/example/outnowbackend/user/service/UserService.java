@@ -38,6 +38,10 @@ public class UserService {
     private final EventAttendanceRepo attendanceRepo;
 
 
+    public boolean usernameExists(String username) {
+        return userRepo.existsByUsername(username);
+    }
+
     @Transactional
     public UserDTO createUser(User user) {
 //        if (user.getShowDob()       == null) user.setShowDob(true);
@@ -174,10 +178,6 @@ public class UserService {
                 if (user.getShowInterests() != null) existingUser.setShowInterests(user.getShowInterests());
                 return userMapper.toDTO(userRepo.save(existingUser));
             } else {
-//                if (user.getShowDob()       == null) user.setShowDob(true);
-//                if (user.getShowLocation()  == null) user.setShowLocation(true);
-//                if (user.getShowGender()    == null) user.setShowGender(true);
-//                if (user.getShowInterests() == null) user.setShowInterests(true);
                 return userMapper.toDTO(userRepo.save(user));
             }
         } catch (Exception e) {

@@ -22,12 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Indexed
 @Table(name = "event")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Indexed
 public class Event {
 
     @Id

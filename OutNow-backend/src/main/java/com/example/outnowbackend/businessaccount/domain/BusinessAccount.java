@@ -49,7 +49,6 @@ public class BusinessAccount {
     @Column(nullable = true)
     private Double longitude;
 
-    // Relationship: each business account creates many events
     @OneToMany(mappedBy = "businessAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Event> createdEvents;
 
